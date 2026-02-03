@@ -196,9 +196,7 @@ export default function LandingPage({ navigateTo }: NavigationProps) {
                 Build your career <br />
                 <TypingAnimation />
               </h1>
-              <p className="max-w-xl text-lg leading-relaxed text-slate-600">
-                The all-in-one operating system for high-achieving students. Manage internships, grades, applications, and networking in one seamless dashboard.
-              </p>
+
               <div className="flex flex-wrap gap-3 pt-2">
                 <button onClick={() => navigateTo(Screen.SIGNUP_STEP_1)} className="inline-flex h-12 items-center justify-center rounded-xl bg-primary px-6 text-base font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/30 hover:shadow-primary/40">
                   Start free 3-day trial
