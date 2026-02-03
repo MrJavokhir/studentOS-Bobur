@@ -1,11 +1,115 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Screen, NavigationProps } from '../types';
+import { userApi, authApi } from '../src/services/api';
 
 export default function ProfileSettings({ navigateTo }: NavigationProps) {
   const [isSidebarLocked, setIsSidebarLocked] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const hoverTimeoutRef = useRef<any>(null);
+
+  // Data State
+  const [isLoading, setIsLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    educationLevel: '',
+    university: '',
+    major: '',
+    graduationYear: '',
+    skills: [] as string[],
+    goals: [] as string[], // Using goals for 'Interests'
+  });
+
+  const [newSkill, setNewSkill] = useState('');
+  const [newInterest, setNewInterest] = useState('');
+
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      setIsLoading(true);
+      // Fetch user basic info for email
+      const { data: authData } = await authApi.me();
+      // Fetch profile details
+      const { data: profileData } = await userApi.getProfile();
+
+      if (authData && profileData) {
+        setUserData(authData);
+        setFormData({
+          fullName: profileData.fullName || authData.profile?.fullName || '',
+          email: authData.email || '',
+          educationLevel: profileData.educationLevel || '',
+          university: profileData.university || '',
+          major: profileData.major || '',
+          graduationYear: profileData.graduationYear?.toString() || '',
+          skills: profileData.skills || [],
+          goals: profileData.goals || [],
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load profile', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddSkill = () => {
+    if (newSkill && !formData.skills.includes(newSkill)) {
+      setFormData(prev => ({ ...prev, skills: [...prev.skills, newSkill] }));
+      setNewSkill('');
+    }
+  };
+
+  const handleRemoveSkill = (skillToRemove: string) => {
+    setFormData(prev => ({ ...prev, skills: prev.skills.filter(s => s !== skillToRemove) }));
+  };
+
+  const handleAddInterest = () => {
+    if (newInterest && !formData.goals.includes(newInterest)) {
+      setFormData(prev => ({ ...prev, goals: [...prev.goals, newInterest] }));
+      setNewInterest('');
+    }
+  };
+
+  const handleRemoveInterest = (interestToRemove: string) => {
+    setFormData(prev => ({ ...prev, goals: prev.goals.filter(i => i !== interestToRemove) }));
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await userApi.updateProfile({
+        fullName: formData.fullName,
+        educationLevel: formData.educationLevel,
+        university: formData.university,
+        major: formData.major,
+        graduationYear: parseInt(formData.graduationYear) || undefined,
+        skills: formData.skills,
+        goals: formData.goals,
+      });
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Failed to update profile', error);
+      alert('Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
@@ -23,11 +127,12 @@ export default function ProfileSettings({ navigateTo }: NavigationProps) {
 
   const isSidebarExpanded = isSidebarLocked || isSidebarHovered;
 
+  if (isLoading) {
+    return <div className="flex h-screen items-center justify-center">Loading profile...</div>;
+  }
+
   return (
     <div className="flex h-screen bg-background-light dark:bg-background-dark text-text-main dark:text-white font-display overflow-hidden relative">
-      {/* Spacer */}
-      <div className={`${isSidebarLocked ? 'w-64' : 'w-20'} hidden md:block flex-shrink-0 transition-all duration-300 ease-in-out`} />
-
       {/* Sidebar */}
       <aside 
         onMouseEnter={handleMouseEnter}
@@ -91,30 +196,28 @@ export default function ProfileSettings({ navigateTo }: NavigationProps) {
             onClick={() => navigateTo(Screen.PROFILE)}
             className={`flex items-center ${isSidebarExpanded ? 'gap-3 px-3 py-2 w-full' : 'justify-center size-10'} rounded-full bg-gray-100 dark:bg-gray-800 transition-colors cursor-pointer ring-2 ring-primary/20`}
           >
-            <div className="size-8 rounded-full bg-gray-200 bg-cover bg-center ring-2 ring-white dark:ring-gray-700 flex-shrink-0" data-alt="User profile picture placeholder" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAhG4np0VVE22WojP2CGz7Ch6oi2UbBGvY215GNeJl-qbqiIkvVO0e4VJCR48HYD7zcjJ60KfnEAbHOCeMGlVJwochpZSwqE5sh6rBSYgIsX8LQz5UE6yBSk2CJMQ8HXNzUxgZG2yHaebJYk7QmIl7Z2KUZH1fL8p4S0iaspKV4wNVdgBRvRv1lXYD-NeEM5GHeF11YqbTWAvllHQzT4AqVhoA_CKzfcl5nPMHa4BOHNacdhm-S2FFPGfH8ZhQF4TdbUdOb1vS8lg0')" }}></div>
+            <div className="size-8 rounded-full bg-gray-200 bg-cover bg-center ring-2 ring-white dark:ring-gray-700 flex-shrink-0" style={{ backgroundImage: "url('https://ui-avatars.com/api/?name=" + (formData.fullName || 'User') + "&background=random')" }}></div>
             <div className={`flex flex-col overflow-hidden transition-all duration-300 ${isSidebarExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
-                <span className="text-sm font-bold text-text-main dark:text-white truncate">Alex Morgan</span>
-                <span className="text-xs text-text-sub truncate">alex@student.edu</span>
+                <span className="text-sm font-bold text-text-main dark:text-white truncate">{formData.fullName || 'User'}</span>
+                <span className="text-xs text-text-sub truncate">{formData.email}</span>
             </div>
           </div>
         </div>
       </aside>
-      
+
+      {/* Main Content Spacer */}
+      <div className={`${isSidebarLocked ? 'w-64' : 'w-20'} hidden md:block flex-shrink-0 transition-all duration-300 ease-in-out`} />
+
       <main className="flex-1 flex flex-col h-full overflow-hidden relative bg-[#fafafa] dark:bg-background-dark">
-        {/* Header and content remain unchanged */}
+        {/* Header */}
         <header className="h-20 px-8 flex items-center justify-between flex-shrink-0 bg-white dark:bg-card-dark border-b border-gray-200 dark:border-gray-800 z-10">
           <div className="flex flex-col justify-center">
             <h2 className="text-2xl font-bold text-text-main dark:text-white">Profile Settings</h2>
             <p className="text-sm text-text-sub">Manage your personal information and account preferences.</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="relative hidden sm:block">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">search</span>
-              <input className="pl-10 pr-4 py-2 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary w-64 transition-all shadow-sm" placeholder="Search settings..." type="text" />
-            </div>
-            <button className="relative p-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-text-sub hover:text-primary transition-colors shadow-sm">
+             <button className="relative p-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-text-sub hover:text-primary transition-colors shadow-sm">
               <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute top-2 right-2.5 size-2 bg-red-500 rounded-full border border-white dark:border-gray-800"></span>
             </button>
           </div>
         </header>
@@ -130,32 +233,39 @@ export default function ProfileSettings({ navigateTo }: NavigationProps) {
                   <h3 className="text-lg font-bold text-text-main dark:text-white mb-6">Account Basics</h3>
                   <div className="flex flex-col items-center mb-8">
                     <div className="relative group cursor-pointer">
-                      <div className="size-28 rounded-full bg-gray-200 bg-cover bg-center border-4 border-white dark:border-gray-800 shadow-md transition-transform group-hover:scale-105" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAhG4np0VVE22WojP2CGz7Ch6oi2UbBGvY215GNeJl-qbqiIkvVO0e4VJCR48HYD7zcjJ60KfnEAbHOCeMGlVJwochpZSwqE5sh6rBSYgIsX8LQz5UE6yBSk2CJMQ8HXNzUxgZG2yHaebJYk7QmIl7Z2KUZH1fL8p4S0iaspKV4wNVdgBRvRv1lXYD-NeEM5GHeF11YqbTWAvllHQzT4AqVhoA_CKzfcl5nPMHa4BOHNacdhm-S2FFPGfH8ZhQF4TdbUdOb1vS8lg0')" }}></div>
-                      <button className="absolute bottom-0 right-1 p-2 bg-primary rounded-full text-white hover:bg-primary-dark shadow-lg border-2 border-white dark:border-gray-800 transition-all">
-                        <span className="material-symbols-outlined text-[18px]">photo_camera</span>
-                      </button>
+                      <div className="size-28 rounded-full bg-gray-200 bg-cover bg-center border-4 border-white dark:border-gray-800 shadow-md transition-transform group-hover:scale-105" 
+                           style={{ backgroundImage: "url('https://ui-avatars.com/api/?name=" + (formData.fullName || 'User') + "&background=random')" }}></div>
                     </div>
-                    <button className="mt-4 text-sm font-medium text-primary hover:text-primary-dark transition-colors">Change Profile Picture</button>
                   </div>
                   <div className="space-y-5">
                     <div>
                       <label className="block text-xs font-bold text-text-sub uppercase mb-1.5 tracking-wider">Full Name</label>
                       <div className="relative">
                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">person</span>
-                        <input className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" type="text" defaultValue="Alex Morgan" />
+                        <input 
+                          className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" 
+                          type="text" 
+                          value={formData.fullName}
+                          onChange={(e) => handleChange('fullName', e.target.value)}
+                        />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-text-sub uppercase mb-1.5 tracking-wider">Gmail Address</label>
+                      <label className="block text-xs font-bold text-text-sub uppercase mb-1.5 tracking-wider">Email Address</label>
                       <div className="relative">
                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">mail</span>
-                        <input className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" type="email" defaultValue="alex.morgan@studentos.com" />
+                        <input 
+                          className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" 
+                          type="email" 
+                          value={formData.email}
+                          disabled
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Security */}
+                {/* Security - Placeholder for now */}
                 <div className="bg-white dark:bg-card-dark rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-800">
                   <h3 className="text-lg font-bold text-text-main dark:text-white mb-6">Security</h3>
                   <div className="space-y-5">
@@ -163,17 +273,9 @@ export default function ProfileSettings({ navigateTo }: NavigationProps) {
                       <label className="block text-xs font-bold text-text-sub uppercase mb-1.5 tracking-wider">Current Password</label>
                       <input className="w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" placeholder="••••••••" type="password" />
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-text-sub uppercase mb-1.5 tracking-wider">New Password</label>
-                      <input className="w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" placeholder="New password" type="password" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-text-sub uppercase mb-1.5 tracking-wider">Confirm Password</label>
-                      <input className="w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" placeholder="Confirm new password" type="password" />
-                    </div>
-                    <button className="w-full mt-2 py-3 rounded-lg bg-primary text-white font-bold hover:bg-primary-dark transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2">
+                     <button className="w-full mt-2 py-3 rounded-lg bg-gray-100 text-gray-500 font-bold hover:bg-gray-200 transition-all flex items-center justify-center gap-2 cursor-not-allowed">
                       <span className="material-symbols-outlined text-[20px]">lock_reset</span>
-                      Update Password
+                      Update Password (Coming Soon)
                     </button>
                   </div>
                 </div>
@@ -186,53 +288,37 @@ export default function ProfileSettings({ navigateTo }: NavigationProps) {
                 <div className="bg-white dark:bg-card-dark rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-800">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-bold text-text-main dark:text-white">Education</h3>
-                    <button className="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors">
-                      <span className="material-symbols-outlined">add</span>
-                    </button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
                       <label className="block text-xs font-bold text-text-sub uppercase mb-1.5 tracking-wider">School / University</label>
-                      <input className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" type="text" defaultValue="Stanford University" />
+                      <input 
+                        className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" 
+                        type="text" 
+                        placeholder="e.g. Stanford University"
+                        value={formData.university}
+                        onChange={(e) => handleChange('university', e.target.value)}
+                      />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-text-sub uppercase mb-1.5 tracking-wider">Degree</label>
-                      <input className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" type="text" defaultValue="B.S. Computer Science" />
+                      <label className="block text-xs font-bold text-text-sub uppercase mb-1.5 tracking-wider">Major / Degree</label>
+                      <input 
+                        className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" 
+                        type="text" 
+                        placeholder="e.g. Computer Science"
+                        value={formData.major}
+                        onChange={(e) => handleChange('major', e.target.value)}
+                      />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-text-sub uppercase mb-1.5 tracking-wider">Graduation Year</label>
-                      <input className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" type="text" defaultValue="2025" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Work Experience */}
-                <div className="bg-white dark:bg-card-dark rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-800">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-bold text-text-main dark:text-white">Work Experience</h3>
-                    <button className="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors">
-                      <span className="material-symbols-outlined">add</span>
-                    </button>
-                  </div>
-                  <div className="relative pl-8 border-l-2 border-gray-100 dark:border-gray-700 ml-2 space-y-8">
-                    <div className="relative">
-                      <div className="absolute -left-[41px] top-1.5 size-5 bg-primary rounded-full border-4 border-white dark:border-card-dark"></div>
-                      <div className="space-y-5">
-                        <div>
-                          <label className="block text-xs font-bold text-text-sub uppercase mb-1.5 tracking-wider">Company</label>
-                          <input className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" type="text" defaultValue="TechStart Inc." />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                          <div>
-                            <label className="block text-xs font-bold text-text-sub uppercase mb-1.5 tracking-wider">Job Title</label>
-                            <input className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" type="text" defaultValue="Product Intern" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-text-sub uppercase mb-1.5 tracking-wider">Duration</label>
-                            <input className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" type="text" defaultValue="Jun 2023 - Sep 2023" />
-                          </div>
-                        </div>
-                      </div>
+                      <input 
+                        className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary text-text-main dark:text-white transition-all outline-none" 
+                        type="number" 
+                        placeholder="2025"
+                        value={formData.graduationYear}
+                        onChange={(e) => handleChange('graduationYear', e.target.value)}
+                      />
                     </div>
                   </div>
                 </div>
@@ -243,43 +329,61 @@ export default function ProfileSettings({ navigateTo }: NavigationProps) {
                   <div className="mb-8">
                     <label className="block text-xs font-bold text-text-sub uppercase mb-3 tracking-wider">Professional Skills</label>
                     <div className="flex flex-wrap gap-2">
-                      {['Python', 'UI/UX Design', 'Product Management'].map((skill) => (
+                      {formData.skills.map((skill) => (
                         <div key={skill} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border border-blue-100 dark:border-blue-800/30 group cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
                           {skill}
-                          <button className="text-blue-400 hover:text-blue-600 dark:text-blue-500 dark:hover:text-blue-300">
+                          <button onClick={() => handleRemoveSkill(skill)} className="text-blue-400 hover:text-blue-600 dark:text-blue-500 dark:hover:text-blue-300">
                             <span className="material-symbols-outlined text-[16px]">close</span>
                           </button>
                         </div>
                       ))}
-                      <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 text-text-sub border border-gray-200 dark:border-gray-700 hover:border-primary hover:text-primary hover:bg-primary/5 border-dashed transition-all">
-                        <span className="material-symbols-outlined text-[16px]">add</span>
-                        Add Skill
-                      </button>
+                      <div className="flex items-center gap-2">
+                         <input 
+                            type="text" 
+                            className="px-2 py-1 text-sm border rounded" 
+                            placeholder="Add skill..."
+                            value={newSkill}
+                            onChange={(e) => setNewSkill(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleAddSkill()}
+                         />
+                         <button onClick={handleAddSkill} className="text-primary text-sm font-bold">Add</button>
+                      </div>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-text-sub uppercase mb-3 tracking-wider">Interests</label>
+                    <label className="block text-xs font-bold text-text-sub uppercase mb-3 tracking-wider">Interests (Goals)</label>
                     <div className="flex flex-wrap gap-2">
-                      {['Fintech', 'Sustainability'].map((interest) => (
+                      {formData.goals.map((interest) => (
                         <div key={interest} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border border-purple-100 dark:border-purple-800/30 group cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors">
                           {interest}
-                          <button className="text-purple-400 hover:text-purple-600 dark:text-purple-500 dark:hover:text-purple-300">
+                          <button onClick={() => handleRemoveInterest(interest)} className="text-purple-400 hover:text-purple-600 dark:text-purple-500 dark:hover:text-purple-300">
                             <span className="material-symbols-outlined text-[16px]">close</span>
                           </button>
                         </div>
                       ))}
-                      <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 text-text-sub border border-gray-200 dark:border-gray-700 hover:border-purple-500 hover:text-purple-500 hover:bg-purple-50 border-dashed transition-all">
-                        <span className="material-symbols-outlined text-[16px]">add</span>
-                        Add Interest
-                      </button>
+                      <div className="flex items-center gap-2">
+                         <input 
+                            type="text" 
+                            className="px-2 py-1 text-sm border rounded" 
+                            placeholder="Add interest..."
+                            value={newInterest}
+                            onChange={(e) => setNewInterest(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleAddInterest()}
+                         />
+                         <button onClick={handleAddInterest} className="text-purple-600 text-sm font-bold">Add</button>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex justify-end pt-4">
-                  <button className="px-8 py-3.5 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/25 flex items-center gap-2 hover:scale-105 active:scale-95">
-                    <span className="material-symbols-outlined text-[20px]">save</span>
-                    Save Changes
+                  <button 
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="px-8 py-3.5 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/25 flex items-center gap-2 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">{saving ? 'sync' : 'save'}</span>
+                    {saving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
 
