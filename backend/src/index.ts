@@ -19,6 +19,9 @@ import aiRoutes from './routes/ai.routes.js';
 
 const app = express();
 
+// Trust proxy (required for Railway/Render/Heroku - behind a proxy)
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 app.use(cors({
