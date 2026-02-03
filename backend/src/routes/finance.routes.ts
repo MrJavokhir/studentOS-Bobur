@@ -125,7 +125,7 @@ router.post('/transactions', validate(transactionSchema), async (req: Authentica
 router.delete('/transactions/:id', async (req: AuthenticatedRequest, res, next) => {
   try {
     await prisma.transaction.delete({
-      where: { id: req.params.id, userId: req.user!.id },
+      where: { id: req.params.id as string, userId: req.user!.id },
     });
     res.status(204).send();
   } catch (error) {
