@@ -1,7 +1,80 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Screen, NavigationProps } from '../types';
+import { authApi } from '../src/services/api';
 
 export default function SignIn({ navigateTo }: NavigationProps) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const { data, error: apiError } = await authApi.login({ email, password });
+      
+      if (apiError) {
+        setError(apiError);
+        setIsLoading(false);
+        return;
+      }
+
+      if (data) {
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Navigate based on role
+        if (data.user.role === 'ADMIN') {
+          navigateTo(Screen.ADMIN_DASHBOARD);
+        } else if (data.user.role === 'EMPLOYER') {
+          navigateTo(Screen.EMPLOYER_DASHBOARD);
+        } else {
+          navigateTo(Screen.DASHBOARD);
+        }
+      }
+    } catch (err) {
+      setError('Network error. Please check your connection.');
+    }
+    
+    setIsLoading(false);
+  };
+
+  const handleDemoLogin = async (role: 'admin' | 'employer') => {
+    setIsLoading(true);
+    setError('');
+    
+    const credentials = role === 'admin' 
+      ? { email: 'admin@studentos.com', password: 'admin123' }
+      : { email: 'hr@techflow.com', password: 'employer123' };
+    
+    try {
+      const { data, error: apiError } = await authApi.login(credentials);
+      
+      if (apiError) {
+        setError(apiError);
+        setIsLoading(false);
+        return;
+      }
+
+      if (data) {
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        navigateTo(role === 'admin' ? Screen.ADMIN_DASHBOARD : Screen.EMPLOYER_DASHBOARD);
+      }
+    } catch (err) {
+      setError('Network error. Please check your connection.');
+    }
+    
+    setIsLoading(false);
+  };
+
   return (
     <div className="bg-[#f6f6f8] dark:bg-[#111421] min-h-screen flex flex-col justify-center items-center p-4 transition-colors duration-200 font-display text-slate-900 dark:text-white">
       <div className="w-full max-w-[440px] flex flex-col items-center">
@@ -19,6 +92,13 @@ export default function SignIn({ navigateTo }: NavigationProps) {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Welcome back</h1>
             <p className="text-slate-500 dark:text-slate-400 text-sm">Please enter your details to sign in.</p>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm">
+              {error}
+            </div>
+          )}
 
           {/* Social Sign In */}
           <button className="group relative flex w-full items-center justify-center gap-3 rounded-lg bg-white dark:bg-[#25293b] border border-slate-200 dark:border-slate-700 px-4 py-3 text-base font-bold text-slate-900 dark:text-white transition-all hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20">
@@ -42,27 +122,63 @@ export default function SignIn({ navigateTo }: NavigationProps) {
           </div>
 
           {/* Email Form */}
-          <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); navigateTo(Screen.DASHBOARD); }}>
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div className="space-y-1.5">
               <label className="block text-sm font-semibold text-slate-900 dark:text-slate-200" htmlFor="email">Email</label>
               <div className="relative">
-                <input className="block w-full rounded-lg border-none bg-[#f8f9fb] dark:bg-[#111421] px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-primary shadow-sm ring-1 ring-inset ring-slate-200 dark:ring-slate-700 transition-all" id="email" name="email" placeholder="name@studentos.com" required type="email"/>
+                <input 
+                  className="block w-full rounded-lg border-none bg-[#f8f9fb] dark:bg-[#111421] px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-primary shadow-sm ring-1 ring-inset ring-slate-200 dark:ring-slate-700 transition-all" 
+                  id="email" 
+                  name="email" 
+                  placeholder="name@studentos.com" 
+                  required 
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                />
               </div>
             </div>
             <div className="space-y-1.5">
               <label className="block text-sm font-semibold text-slate-900 dark:text-slate-200" htmlFor="password">Password</label>
               <div className="relative">
-                <input className="block w-full rounded-lg border-none bg-[#f8f9fb] dark:bg-[#111421] px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-primary shadow-sm ring-1 ring-inset ring-slate-200 dark:ring-slate-700 transition-all pr-10" id="password" name="password" placeholder="••••••••" required type="password"/>
-                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-900 dark:text-slate-500 dark:hover:text-white transition-colors cursor-pointer p-1 rounded-md">
-                  <span className="material-symbols-outlined text-[20px]">visibility</span>
+                <input 
+                  className="block w-full rounded-lg border-none bg-[#f8f9fb] dark:bg-[#111421] px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-primary shadow-sm ring-1 ring-inset ring-slate-200 dark:ring-slate-700 transition-all pr-10" 
+                  id="password" 
+                  name="password" 
+                  placeholder="••••••••" 
+                  required 
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                />
+                <button 
+                  type="button" 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-900 dark:text-slate-500 dark:hover:text-white transition-colors cursor-pointer p-1 rounded-md"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  <span className="material-symbols-outlined text-[20px]">{showPassword ? 'visibility_off' : 'visibility'}</span>
                 </button>
               </div>
             </div>
             <div className="flex justify-end pt-1">
               <a href="#" className="text-sm font-medium text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-primary transition-colors">Forgot Password?</a>
             </div>
-            <button type="submit" className="mt-2 flex w-full items-center justify-center rounded-lg bg-primary px-4 py-3 text-base font-bold text-white shadow-md hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-all">
-              Sign In
+            <button 
+              type="submit" 
+              disabled={isLoading}
+              className="mt-2 flex w-full items-center justify-center rounded-lg bg-primary px-4 py-3 text-base font-bold text-white shadow-md hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                  </svg>
+                  Signing in...
+                </span>
+              ) : 'Sign In'}
             </button>
           </form>
 
@@ -70,11 +186,19 @@ export default function SignIn({ navigateTo }: NavigationProps) {
           <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
             <p className="text-center text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Demo Portals</p>
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => navigateTo(Screen.ADMIN_DASHBOARD)} className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm font-bold transition-colors">
+              <button 
+                onClick={() => handleDemoLogin('admin')} 
+                disabled={isLoading}
+                className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm font-bold transition-colors disabled:opacity-50"
+              >
                 <span className="material-symbols-outlined text-[16px]">admin_panel_settings</span>
                 Admin
               </button>
-              <button onClick={() => navigateTo(Screen.EMPLOYER_DASHBOARD)} className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm font-bold transition-colors">
+              <button 
+                onClick={() => handleDemoLogin('employer')} 
+                disabled={isLoading}
+                className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm font-bold transition-colors disabled:opacity-50"
+              >
                 <span className="material-symbols-outlined text-[16px]">business_center</span>
                 Employer
               </button>

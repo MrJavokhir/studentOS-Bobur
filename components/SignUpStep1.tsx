@@ -1,7 +1,56 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Screen, NavigationProps } from '../types';
+import { authApi } from '../src/services/api';
 
 export default function SignUpStep1({ navigateTo }: NavigationProps) {
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    // Validation
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { data, error: apiError } = await authApi.register({ email, password, fullName });
+      
+      if (apiError) {
+        setError(apiError);
+        setIsLoading(false);
+        return;
+      }
+
+      if (data) {
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Navigate to step 2 for onboarding
+        navigateTo(Screen.SIGNUP_STEP_2);
+      }
+    } catch (err) {
+      setError('Network error. Please check your connection.');
+    }
+    
+    setIsLoading(false);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="w-full border-b border-slate-200 bg-white/50 backdrop-blur-md sticky top-0 z-50">
@@ -26,6 +75,13 @@ export default function SignUpStep1({ navigateTo }: NavigationProps) {
             </p>
           </div>
           <div className="bg-white shadow-xl shadow-slate-200/40 border border-slate-200 rounded-2xl p-6 sm:p-10">
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+                {error}
+              </div>
+            )}
+
             <button type="button" className="group flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
               <svg className="h-5 w-5" aria-hidden="true" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
@@ -43,29 +99,85 @@ export default function SignUpStep1({ navigateTo }: NavigationProps) {
                 <span className="bg-white px-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Or continue with email</span>
               </div>
             </div>
-            <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); navigateTo(Screen.SIGNUP_STEP_2); }}>
+            <form className="space-y-5" onSubmit={handleSubmit}>
               <div>
                 <label htmlFor="fullname" className="block text-sm font-bold text-slate-700 mb-2">Full Name</label>
-                <input type="text" name="fullname" id="fullname" className="block w-full rounded-xl border-slate-300 py-3 px-4 shadow-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm sm:leading-6" placeholder="John Doe" />
+                <input 
+                  type="text" 
+                  name="fullname" 
+                  id="fullname" 
+                  className="block w-full rounded-xl border-slate-300 py-3 px-4 shadow-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm sm:leading-6" 
+                  placeholder="John Doe"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
               </div>
               <div>
                 <label htmlFor="email" className="block text-sm font-bold text-slate-700 mb-2">Email address</label>
-                <input type="email" name="email" id="email" className="block w-full rounded-xl border-slate-300 py-3 px-4 shadow-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm sm:leading-6" placeholder="you@university.edu" />
+                <input 
+                  type="email" 
+                  name="email" 
+                  id="email" 
+                  className="block w-full rounded-xl border-slate-300 py-3 px-4 shadow-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm sm:leading-6" 
+                  placeholder="you@university.edu"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
               </div>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div>
                   <label htmlFor="password" className="block text-sm font-bold text-slate-700 mb-2">Password</label>
-                  <input type="password" name="password" id="password" className="block w-full rounded-xl border-slate-300 py-3 px-4 shadow-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm sm:leading-6" placeholder="••••••••" />
+                  <input 
+                    type="password" 
+                    name="password" 
+                    id="password" 
+                    className="block w-full rounded-xl border-slate-300 py-3 px-4 shadow-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm sm:leading-6" 
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                  />
                 </div>
                 <div>
                   <label htmlFor="confirm_password" className="block text-sm font-bold text-slate-700 mb-2">Confirm Password</label>
-                  <input type="password" name="confirm_password" id="confirm_password" className="block w-full rounded-xl border-slate-300 py-3 px-4 shadow-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm sm:leading-6" placeholder="••••••••" />
+                  <input 
+                    type="password" 
+                    name="confirm_password" 
+                    id="confirm_password" 
+                    className="block w-full rounded-xl border-slate-300 py-3 px-4 shadow-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm sm:leading-6" 
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                  />
                 </div>
               </div>
               <div className="pt-4">
-                <button type="submit" className="flex w-full justify-center items-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 hover:bg-primary-dark hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-                  Create Account
-                  <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                <button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="flex w-full justify-center items-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 hover:bg-primary-dark hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                      </svg>
+                      Creating account...
+                    </span>
+                  ) : (
+                    <>
+                      Create Account
+                      <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -83,7 +195,7 @@ export default function SignUpStep1({ navigateTo }: NavigationProps) {
         </div>
       </main>
       <footer className="py-8 text-center">
-        <p className="text-sm text-slate-400">© 2023 StudentOS Inc. All rights reserved.</p>
+        <p className="text-sm text-slate-400">© 2024 StudentOS Inc. All rights reserved.</p>
       </footer>
     </div>
   );
