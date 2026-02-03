@@ -9,7 +9,7 @@ const router = Router();
 router.get('/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const application = await prisma.jobApplication.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: {
         user: {
           include: {
@@ -55,7 +55,7 @@ router.patch('/:id/status', authenticate, requireEmployer, async (req: Authentic
 
     // First check if this employer owns the job
     const application = await prisma.jobApplication.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: {
         job: {
           include: {
@@ -77,7 +77,7 @@ router.patch('/:id/status', authenticate, requireEmployer, async (req: Authentic
     }
 
     const updated = await prisma.jobApplication.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: {
         status,
         notes,
@@ -95,7 +95,7 @@ router.get('/job/:jobId', authenticate, requireEmployer, async (req: Authenticat
   try {
     const { status, page = '1', limit = '20' } = req.query as any;
 
-    const where: any = { jobId: req.params.jobId };
+    const where: any = { jobId: req.params.jobId as string };
     if (status) where.status = status;
 
     const [applications, total] = await Promise.all([
@@ -142,7 +142,7 @@ router.get('/job/:jobId', authenticate, requireEmployer, async (req: Authenticat
 router.delete('/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const application = await prisma.jobApplication.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
 
     if (!application || application.userId !== req.user!.id) {
@@ -151,7 +151,7 @@ router.delete('/:id', authenticate, async (req: AuthenticatedRequest, res, next)
     }
 
     await prisma.jobApplication.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: { status: 'WITHDRAWN' },
     });
 

@@ -131,7 +131,7 @@ router.patch('/users/:id', async (req: AuthenticatedRequest, res, next) => {
     const { isActive, role } = req.body;
 
     const user = await prisma.user.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: { isActive, role },
     });
 
@@ -144,7 +144,7 @@ router.patch('/users/:id', async (req: AuthenticatedRequest, res, next) => {
 // Delete user
 router.delete('/users/:id', async (req: AuthenticatedRequest, res, next) => {
   try {
-    await prisma.user.delete({ where: { id: req.params.id } });
+    await prisma.user.delete({ where: { id: req.params.id as string } });
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -193,7 +193,7 @@ router.post('/pricing', async (req: AuthenticatedRequest, res, next) => {
 router.patch('/pricing/:id', async (req: AuthenticatedRequest, res, next) => {
   try {
     const plan = await prisma.pricingPlan.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: req.body,
     });
     res.json(plan);
@@ -204,7 +204,7 @@ router.patch('/pricing/:id', async (req: AuthenticatedRequest, res, next) => {
 
 router.delete('/pricing/:id', async (req: AuthenticatedRequest, res, next) => {
   try {
-    await prisma.pricingPlan.delete({ where: { id: req.params.id } });
+    await prisma.pricingPlan.delete({ where: { id: req.params.id as string } });
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -226,7 +226,7 @@ router.get('/messages', async (req: AuthenticatedRequest, res, next) => {
 router.patch('/messages/:id', async (req: AuthenticatedRequest, res, next) => {
   try {
     const message = await prisma.contactMessage.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: { isRead: true },
     });
     res.json(message);

@@ -98,7 +98,7 @@ router.get('/', optionalAuth, async (req: AuthenticatedRequest, res: Response, n
 router.get('/:id', optionalAuth, async (req: AuthenticatedRequest, res, next) => {
   try {
     const job = await prisma.job.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: {
         employer: {
           select: {
@@ -146,7 +146,7 @@ router.post('/:id/apply', authenticate, async (req: AuthenticatedRequest, res, n
 
     const application = await prisma.jobApplication.create({
       data: {
-        jobId: req.params.id,
+        jobId: req.params.id as string,
         userId: req.user!.id,
         coverLetter,
         cvUrl,
@@ -174,7 +174,7 @@ router.post('/:id/save', authenticate, async (req: AuthenticatedRequest, res, ne
     const saved = await prisma.savedJob.create({
       data: {
         userId: req.user!.id,
-        jobId: req.params.id,
+        jobId: req.params.id as string,
       },
     });
     res.status(201).json(saved);
@@ -191,7 +191,7 @@ router.post('/:id/save', authenticate, async (req: AuthenticatedRequest, res, ne
 router.delete('/:id/save', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     await prisma.savedJob.delete({
-      where: { userId_jobId: { userId: req.user!.id, jobId: req.params.id } },
+      where: { userId_jobId: { userId: req.user!.id, jobId: req.params.id as string } },
     });
     res.status(204).send();
   } catch (error) {
@@ -308,7 +308,7 @@ router.patch('/:id', authenticate, requireEmployer, async (req: AuthenticatedReq
     }
 
     const existingJob = await prisma.job.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
 
     if (!existingJob) {
@@ -323,7 +323,7 @@ router.patch('/:id', authenticate, requireEmployer, async (req: AuthenticatedReq
     }
 
     const job = await prisma.job.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: req.body,
     });
     res.json(job);
@@ -346,7 +346,7 @@ router.delete('/:id', authenticate, requireEmployer, async (req: AuthenticatedRe
     }
 
     const existingJob = await prisma.job.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
 
     if (!existingJob) {
@@ -360,7 +360,7 @@ router.delete('/:id', authenticate, requireEmployer, async (req: AuthenticatedRe
       return;
     }
 
-    await prisma.job.delete({ where: { id: req.params.id } });
+    await prisma.job.delete({ where: { id: req.params.id as string } });
     res.status(204).send();
   } catch (error) {
     next(error);

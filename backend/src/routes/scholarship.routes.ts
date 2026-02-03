@@ -78,7 +78,7 @@ router.get('/', optionalAuth, validate(querySchema), async (req: AuthenticatedRe
 router.get('/:id', optionalAuth, async (req: AuthenticatedRequest, res, next) => {
   try {
     const scholarship = await prisma.scholarship.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
 
     if (!scholarship) {
@@ -111,7 +111,7 @@ router.post('/:id/save', authenticate, async (req: AuthenticatedRequest, res, ne
     const saved = await prisma.savedScholarship.create({
       data: {
         userId: req.user!.id,
-        scholarshipId: req.params.id,
+        scholarshipId: req.params.id as string,
       },
     });
     res.status(201).json(saved);
@@ -131,7 +131,7 @@ router.delete('/:id/save', authenticate, async (req: AuthenticatedRequest, res, 
       where: {
         userId_scholarshipId: {
           userId: req.user!.id,
-          scholarshipId: req.params.id,
+          scholarshipId: req.params.id as string,
         },
       },
     });
@@ -171,7 +171,7 @@ router.post('/', authenticate, requireAdmin, async (req: AuthenticatedRequest, r
 router.patch('/:id', authenticate, requireAdmin, async (req: AuthenticatedRequest, res, next) => {
   try {
     const scholarship = await prisma.scholarship.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: req.body,
     });
     res.json(scholarship);
@@ -184,7 +184,7 @@ router.patch('/:id', authenticate, requireAdmin, async (req: AuthenticatedReques
 router.delete('/:id', authenticate, requireAdmin, async (req: AuthenticatedRequest, res, next) => {
   try {
     await prisma.scholarship.delete({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
     res.status(204).send();
   } catch (error) {

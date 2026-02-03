@@ -85,7 +85,7 @@ router.post('/', authenticate, async (req: AuthenticatedRequest, res, next) => {
 router.get('/:id', optionalAuth, async (req, res, next) => {
   try {
     const post = await prisma.communityPost.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: {
         user: {
           select: {
@@ -123,7 +123,7 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
 router.delete('/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const post = await prisma.communityPost.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
 
     if (!post || post.userId !== req.user!.id) {
@@ -131,7 +131,7 @@ router.delete('/:id', authenticate, async (req: AuthenticatedRequest, res, next)
       return;
     }
 
-    await prisma.communityPost.delete({ where: { id: req.params.id } });
+    await prisma.communityPost.delete({ where: { id: req.params.id as string } });
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -143,7 +143,7 @@ router.post('/:id/like', authenticate, async (req: AuthenticatedRequest, res, ne
   try {
     await prisma.like.create({
       data: {
-        postId: req.params.id,
+        postId: req.params.id as string,
         userId: req.user!.id,
       },
     });
@@ -163,7 +163,7 @@ router.delete('/:id/like', authenticate, async (req: AuthenticatedRequest, res, 
     await prisma.like.delete({
       where: {
         postId_userId: {
-          postId: req.params.id,
+          postId: req.params.id as string,
           userId: req.user!.id,
         },
       },
@@ -181,7 +181,7 @@ router.post('/:id/comments', authenticate, async (req: AuthenticatedRequest, res
 
     const comment = await prisma.comment.create({
       data: {
-        postId: req.params.id,
+        postId: req.params.id as string,
         userId: req.user!.id,
         content,
       },
@@ -204,7 +204,7 @@ router.post('/:id/comments', authenticate, async (req: AuthenticatedRequest, res
 router.delete('/comments/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const comment = await prisma.comment.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
     });
 
     if (!comment || comment.userId !== req.user!.id) {
@@ -212,7 +212,7 @@ router.delete('/comments/:id', authenticate, async (req: AuthenticatedRequest, r
       return;
     }
 
-    await prisma.comment.delete({ where: { id: req.params.id } });
+    await prisma.comment.delete({ where: { id: req.params.id as string } });
     res.status(204).send();
   } catch (error) {
     next(error);

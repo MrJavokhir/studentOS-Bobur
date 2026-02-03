@@ -64,7 +64,7 @@ router.post('/', authenticate, validate(habitSchema), async (req: AuthenticatedR
 router.patch('/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const habit = await prisma.habit.update({
-      where: { id: req.params.id, userId: req.user!.id },
+      where: { id: req.params.id as string, userId: req.user!.id },
       data: req.body,
     });
     res.json(habit);
@@ -77,7 +77,7 @@ router.patch('/:id', authenticate, async (req: AuthenticatedRequest, res, next) 
 router.delete('/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     await prisma.habit.update({
-      where: { id: req.params.id, userId: req.user!.id },
+      where: { id: req.params.id as string, userId: req.user!.id },
       data: { isActive: false },
     });
     res.status(204).send();
@@ -95,7 +95,7 @@ router.post('/:id/log', authenticate, async (req: AuthenticatedRequest, res, nex
 
     const existingLog = await prisma.habitLog.findFirst({
       where: {
-        habitId: req.params.id,
+        habitId: req.params.id as string,
         userId: req.user!.id,
         completedAt: { gte: today },
       },
@@ -108,7 +108,7 @@ router.post('/:id/log', authenticate, async (req: AuthenticatedRequest, res, nex
 
     const log = await prisma.habitLog.create({
       data: {
-        habitId: req.params.id,
+        habitId: req.params.id as string,
         userId: req.user!.id,
         notes: req.body.notes,
       },
@@ -128,7 +128,7 @@ router.delete('/:id/log', authenticate, async (req: AuthenticatedRequest, res, n
 
     await prisma.habitLog.deleteMany({
       where: {
-        habitId: req.params.id,
+        habitId: req.params.id as string,
         userId: req.user!.id,
         completedAt: { gte: today },
       },

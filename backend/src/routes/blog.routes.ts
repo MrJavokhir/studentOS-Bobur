@@ -56,7 +56,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
 router.get('/:slug', optionalAuth, async (req, res, next) => {
   try {
     const post = await prisma.blogPost.findUnique({
-      where: { slug: req.params.slug },
+      where: { slug: req.params.slug as string },
       include: {
         author: {
           select: {
@@ -143,14 +143,14 @@ router.patch('/:id', authenticate, requireAdmin, async (req: AuthenticatedReques
 
     // Update publishedAt if publishing for first time
     if (data.status === 'PUBLISHED') {
-      const existing = await prisma.blogPost.findUnique({ where: { id: req.params.id } });
+      const existing = await prisma.blogPost.findUnique({ where: { id: req.params.id as string } });
       if (existing && !existing.publishedAt) {
         data.publishedAt = new Date();
       }
     }
 
     const post = await prisma.blogPost.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data,
     });
 
@@ -163,7 +163,7 @@ router.patch('/:id', authenticate, requireAdmin, async (req: AuthenticatedReques
 // Admin: Delete post
 router.delete('/:id', authenticate, requireAdmin, async (req: AuthenticatedRequest, res, next) => {
   try {
-    await prisma.blogPost.delete({ where: { id: req.params.id } });
+    await prisma.blogPost.delete({ where: { id: req.params.id as string } });
     res.status(204).send();
   } catch (error) {
     next(error);
