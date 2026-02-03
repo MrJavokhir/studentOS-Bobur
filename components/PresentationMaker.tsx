@@ -87,12 +87,10 @@ export default function PresentationMaker({ navigateTo }: NavigationProps) {
         </div>
 
         <div className={`flex flex-col ${isSidebarExpanded ? 'items-stretch px-4' : 'items-center px-2'} space-y-2 w-full mt-auto`}>
-          <button className={`flex items-center ${isSidebarExpanded ? 'gap-3 px-3 py-2.5 w-full' : 'justify-center p-3 size-10'} rounded-lg text-text-sub hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-text-main transition-colors group relative`} title="Settings">
-            <span className="material-symbols-outlined group-hover:text-gray-600 dark:group-hover:text-gray-300 text-[20px]">settings</span>
-            {isSidebarExpanded && <span className="text-sm font-medium">Settings</span>}
-          </button>
-          
-          <div className={`flex items-center ${isSidebarExpanded ? 'gap-3 px-3 py-2 w-full' : 'justify-center size-10'} rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer`}>
+          <div 
+            onClick={() => navigateTo(Screen.PROFILE)}
+            className={`flex items-center ${isSidebarExpanded ? 'gap-3 px-3 py-2 w-full' : 'justify-center size-10'} rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer`}
+          >
             <div className="size-8 rounded-full bg-gray-200 bg-cover bg-center ring-2 ring-white dark:ring-gray-700 flex-shrink-0" data-alt="User profile picture placeholder" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAhG4np0VVE22WojP2CGz7Ch6oi2UbBGvY215GNeJl-qbqiIkvVO0e4VJCR48HYD7zcjJ60KfnEAbHOCeMGlVJwochpZSwqE5sh6rBSYgIsX8LQz5UE6yBSk2CJMQ8HXNzUxgZG2yHaebJYk7QmIl7Z2KUZH1fL8p4S0iaspKV4wNVdgBRvRv1lXYD-NeEM5GHeF11YqbTWAvllHQzT4AqVhoA_CKzfcl5nPMHa4BOHNacdhm-S2FFPGfH8ZhQF4TdbUdOb1vS8lg0')" }}></div>
             <div className={`flex flex-col overflow-hidden transition-all duration-300 ${isSidebarExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
                 <span className="text-sm font-bold text-text-main dark:text-white truncate">Alex Morgan</span>
@@ -131,140 +129,104 @@ export default function PresentationMaker({ navigateTo }: NavigationProps) {
                 <span className="material-symbols-outlined text-[18px]">expand_more</span>
               </button>
             </div>
-            <div className="size-8 rounded-full bg-gray-200 bg-cover bg-center ml-2 border border-gray-200" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAhG4np0VVE22WojP2CGz7Ch6oi2UbBGvY215GNeJl-qbqiIkvVO0e4VJCR48HYD7zcjJ60KfnEAbHOCeMGlVJwochpZSwqE5sh6rBSYgIsX8LQz5UE6yBSk2CJMQ8HXNzUxgZG2yHaebJYk7QmIl7Z2KUZH1fL8p4S0iaspKV4wNVdgBRvRv1lXYD-NeEM5GHeF11YqbTWAvllHQzT4AqVhoA_CKzfcl5nPMHa4BOHNacdhm-S2FFPGfH8ZhQF4TdbUdOb1vS8lg0')" }}></div>
           </div>
         </header>
         <div className="flex-1 flex overflow-hidden">
-          <div className="w-60 bg-gray-50 dark:bg-card-dark border-r border-gray-200 dark:border-gray-800 flex flex-col flex-shrink-0">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-card-dark">
-              <span className="text-xs font-bold text-text-sub uppercase tracking-wider">Slides</span>
-              <button className="size-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-text-sub transition-colors">
-                <span className="material-symbols-outlined text-[18px]">add</span>
-              </button>
+          {/* Left Sidebar: Slides */}
+          <div className="w-64 bg-gray-50 dark:bg-[#111421] border-r border-gray-200 dark:border-gray-800 flex flex-col">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+              <span className="text-xs font-bold text-text-sub uppercase tracking-wider">Slides (5)</span>
+              <button className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded text-text-sub"><span className="material-symbols-outlined text-lg">add</span></button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <div className="group relative flex gap-3">
-                <div className="w-6 flex flex-col items-center pt-1 gap-1">
-                  <span className="text-xs font-semibold text-primary">1</span>
-                </div>
-                <div className="flex-1 cursor-pointer">
-                  <div className="aspect-video bg-white dark:bg-gray-800 rounded border-2 border-primary shadow-sm p-2 flex flex-col gap-1 overflow-hidden">
-                    <div className="h-2 w-3/4 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-                    <div className="flex-1 flex gap-1">
-                      <div className="w-1/2 bg-gray-100 dark:bg-gray-700/50 rounded"></div>
-                    </div>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className={`group relative rounded-lg border ${i === 1 ? 'border-primary ring-1 ring-primary' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'} bg-white dark:bg-card-dark cursor-pointer transition-all aspect-video shadow-sm`}>
+                  <div className="absolute left-2 top-2 text-[10px] font-bold text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 rounded">{i}</div>
+                  <div className="flex items-center justify-center h-full text-gray-300">
+                    <span className="material-symbols-outlined text-4xl opacity-20">image</span>
                   </div>
                 </div>
-              </div>
-              <div className="group relative flex gap-3">
-                <div className="w-6 flex flex-col items-center pt-1 gap-1">
-                  <span className="text-xs font-semibold text-text-sub group-hover:text-text-main">2</span>
-                </div>
-                <div className="flex-1 cursor-pointer">
-                  <div className="aspect-video bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 shadow-sm p-2 flex flex-col gap-1 overflow-hidden transition-colors">
-                    <div className="h-2 w-1/2 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-                    <div className="grid grid-cols-2 gap-1 mt-1">
-                      <div className="h-8 bg-gray-100 dark:bg-gray-700/50 rounded"></div>
-                      <div className="h-8 bg-gray-100 dark:bg-gray-700/50 rounded"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="group relative flex gap-3">
-                <div className="w-6 flex flex-col items-center pt-1 gap-1">
-                  <span className="text-xs font-semibold text-text-sub group-hover:text-text-main">3</span>
-                </div>
-                <div className="flex-1 cursor-pointer">
-                  <div className="aspect-video bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 shadow-sm p-2 flex flex-col justify-center items-center overflow-hidden transition-colors">
-                    <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-1"></div>
-                    <div className="h-1.5 w-16 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
-          <div className="flex-1 flex flex-col relative bg-gray-100 dark:bg-background-dark/50">
-            <div className="h-12 bg-white dark:bg-card-dark border-b border-gray-200 dark:border-gray-800 flex items-center px-4 justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 border-r border-gray-200 dark:border-gray-700 pr-3 mr-1">
-                  <span className="text-xs font-medium text-text-sub uppercase mr-1">Language:</span>
-                  <select className="bg-gray-50 dark:bg-gray-800 border-none text-sm font-medium rounded py-1 pl-2 pr-8 focus:ring-1 focus:ring-primary">
-                    <option>English (US)</option>
-                    <option>Uzbek</option>
-                    <option>Russian</option>
-                  </select>
+
+          {/* Main Canvas Area */}
+          <div className="flex-1 bg-gray-100 dark:bg-[#0B0D15] flex flex-col relative overflow-hidden">
+            <div className="flex-1 flex items-center justify-center p-8 overflow-auto">
+              <div className="bg-white aspect-video w-full max-w-4xl shadow-xl rounded-sm relative flex flex-col p-12">
+                <div className="flex-1 flex flex-col justify-center items-start gap-6">
+                  <h1 className="text-6xl font-black text-slate-900 tracking-tight leading-tight">Modern Marketing<br/><span className="text-primary">Strategies 2024</span></h1>
+                  <p className="text-xl text-slate-500 max-w-2xl leading-relaxed">A comprehensive guide to reaching your audience in the digital age through data-driven insights and creative storytelling.</p>
                 </div>
-                <button className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-text-sub hover:text-text-main transition-colors" title="Add Text">
-                  <span className="material-symbols-outlined text-[20px]">title</span>
-                </button>
-                <button className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-text-sub hover:text-text-main transition-colors" title="Add Image">
-                  <span className="material-symbols-outlined text-[20px]">image</span>
-                </button>
-                <button className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-text-sub hover:text-text-main transition-colors" title="Add Shape">
-                  <span className="material-symbols-outlined text-[20px]">category</span>
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded p-0.5">
-                  <button className="p-1 rounded hover:bg-white dark:hover:bg-card-dark shadow-sm text-text-main dark:text-white" title="Fit">
-                    <span className="material-symbols-outlined text-[18px]">fit_screen</span>
-                  </button>
-                  <button className="p-1 rounded hover:bg-white dark:hover:bg-card-dark hover:shadow-sm text-text-sub hover:text-text-main" title="Zoom Out">
-                    <span className="material-symbols-outlined text-[18px]">remove</span>
-                  </button>
-                  <span className="text-xs font-medium px-2">85%</span>
-                  <button className="p-1 rounded hover:bg-white dark:hover:bg-card-dark hover:shadow-sm text-text-sub hover:text-text-main" title="Zoom In">
-                    <span className="material-symbols-outlined text-[18px]">add</span>
-                  </button>
+                <div className="flex justify-between items-end">
+                  <div className="flex gap-4">
+                    <div className="size-3 rounded-full bg-slate-900"></div>
+                    <div className="size-3 rounded-full bg-primary"></div>
+                    <div className="size-3 rounded-full bg-purple-500"></div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-slate-900">Alex Morgan</p>
+                    <p className="text-sm text-slate-500">Senior Strategist</p>
+                  </div>
                 </div>
-                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-white dark:bg-card-dark border border-gray-200 dark:border-gray-700 text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <span className="material-symbols-outlined text-[16px]">play_arrow</span>
-                  Present
-                </button>
               </div>
             </div>
-            <div className="flex-1 overflow-auto flex items-center justify-center p-8 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] dark:[background-image:none]">
-              <div className="w-full max-w-5xl aspect-video bg-white dark:bg-card-dark shadow-2xl rounded-sm p-12 relative group selection:bg-primary/20">
-                <div className="h-full flex flex-col justify-center max-w-2xl relative z-10">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 rounded-full text-xs font-semibold mb-6 w-fit">
-                    <span className="material-symbols-outlined text-[16px]">school</span>
-                    StudentOS Annual Report
-                  </div>
-                  <h1 className="text-6xl font-extrabold text-text-main dark:text-white leading-tight mb-6 tracking-tight">
-                    The Future of <br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600">AI in Education</span>
-                  </h1>
-                  <p className="text-xl text-text-sub leading-relaxed max-w-lg mb-8">
-                    Discover how artificial intelligence is transforming the learning landscape for students worldwide in 2024.
-                  </p>
-                  <div className="flex items-center gap-4">
-                    <div className="flex -space-x-3">
-                      <div className="size-10 rounded-full border-2 border-white dark:border-card-dark bg-gray-200 bg-cover bg-center" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAhG4np0VVE22WojP2CGz7Ch6oi2UbBGvY215GNeJl-qbqiIkvVO0e4VJCR48HYD7zcjJ60KfnEAbHOCeMGlVJwochpZSwqE5sh6rBSYgIsX8LQz5UE6yBSk2CJMQ8HXNzUxgZG2yHaebJYk7QmIl7Z2KUZH1fL8p4S0iaspKV4wNVdgBRvRv1lXYD-NeEM5GHeF11YqbTWAvllHQzT4AqVhoA_CKzfcl5nPMHa4BOHNacdhm-S2FFPGfH8ZhQF4TdbUdOb1vS8lg0')" }}></div>
-                      <div className="size-10 rounded-full border-2 border-white dark:border-card-dark bg-gray-300 flex items-center justify-center text-xs font-bold text-gray-600">+3</div>
+            
+            {/* Bottom Toolbar */}
+            <div className="h-12 bg-white dark:bg-card-dark border-t border-gray-200 dark:border-gray-800 flex items-center justify-center gap-4 px-4">
+              <button className="p-2 text-text-sub hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors"><span className="material-symbols-outlined text-xl">undo</span></button>
+              <button className="p-2 text-text-sub hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors"><span className="material-symbols-outlined text-xl">redo</span></button>
+              <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1"></div>
+              <button className="p-2 text-text-sub hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors"><span className="material-symbols-outlined text-xl">zoom_out</span></button>
+              <span className="text-xs font-medium text-text-sub">Fit</span>
+              <button className="p-2 text-text-sub hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors"><span className="material-symbols-outlined text-xl">zoom_in</span></button>
+            </div>
+          </div>
+
+          {/* Right Sidebar: Properties */}
+          <div className="w-72 bg-white dark:bg-card-dark border-l border-gray-200 dark:border-gray-800 flex flex-col">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+              <span className="text-xs font-bold text-text-sub uppercase tracking-wider">Properties</span>
+            </div>
+            <div className="p-4 space-y-6">
+              <div className="space-y-3">
+                <label className="text-xs font-semibold text-text-main dark:text-white">Layout</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button className="h-16 border border-primary bg-primary/5 rounded flex flex-col gap-1 p-1 items-center justify-center">
+                    <div className="w-8 h-4 bg-primary/20 rounded-sm"></div>
+                    <div className="w-8 h-1 bg-primary/20 rounded-full"></div>
+                  </button>
+                  <button className="h-16 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 rounded flex gap-1 p-1 items-center justify-center">
+                    <div className="w-3 h-8 bg-gray-200 dark:bg-gray-600 rounded-sm"></div>
+                    <div className="flex flex-col gap-1">
+                      <div className="w-4 h-1 bg-gray-200 dark:bg-gray-600 rounded-full"></div>
+                      <div className="w-4 h-1 bg-gray-200 dark:bg-gray-600 rounded-full"></div>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-bold text-text-main dark:text-white">Curated by the AI Research Team</span>
-                      <span className="text-xs text-text-sub">Last updated 2 hours ago</span>
-                    </div>
-                  </div>
+                  </button>
                 </div>
-                <div className="absolute top-0 right-0 h-full w-1/3 bg-gradient-to-l from-blue-50/50 to-transparent dark:from-blue-900/10 pointer-events-none"></div>
-                <div className="absolute -right-12 top-1/2 -translate-y-1/2 size-96 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
-                <div className="absolute bottom-12 right-12 size-64 bg-purple-100 dark:bg-purple-900/20 rounded-2xl rotate-3 opacity-50"></div>
-                <div className="absolute bottom-16 right-16 size-64 bg-white dark:bg-card-dark rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-6 flex flex-col justify-between transform transition-transform hover:-translate-y-2 duration-500">
-                  <div className="flex justify-between items-start">
-                    <div className="size-10 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
-                      <span className="material-symbols-outlined">analytics</span>
-                    </div>
-                    <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">+24%</span>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-text-main dark:text-white mb-1">2.4M</div>
-                    <div className="text-sm text-text-sub">Active Students</div>
-                  </div>
-                  <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full w-3/4 bg-orange-500 rounded-full"></div>
-                  </div>
+              </div>
+              <div className="space-y-3">
+                <label className="text-xs font-semibold text-text-main dark:text-white">Typography</label>
+                <select className="w-full text-sm border-gray-200 dark:border-gray-700 rounded-md bg-transparent">
+                  <option>Inter</option>
+                  <option>Roboto</option>
+                  <option>Playfair Display</option>
+                </select>
+                <div className="flex gap-2">
+                  <button className="flex-1 py-1.5 border border-gray-200 dark:border-gray-700 rounded text-center hover:bg-gray-50 dark:hover:bg-gray-800 font-bold">B</button>
+                  <button className="flex-1 py-1.5 border border-gray-200 dark:border-gray-700 rounded text-center hover:bg-gray-50 dark:hover:bg-gray-800 italic">I</button>
+                  <button className="flex-1 py-1.5 border border-gray-200 dark:border-gray-700 rounded text-center hover:bg-gray-50 dark:hover:bg-gray-800 underline">U</button>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <label className="text-xs font-semibold text-text-main dark:text-white">Theme Colors</label>
+                <div className="flex flex-wrap gap-2">
+                  <button className="size-6 rounded-full bg-slate-900 border border-slate-200 dark:border-slate-700"></button>
+                  <button className="size-6 rounded-full bg-primary border border-slate-200 dark:border-slate-700 ring-2 ring-offset-1 ring-primary"></button>
+                  <button className="size-6 rounded-full bg-purple-500 border border-slate-200 dark:border-slate-700"></button>
+                  <button className="size-6 rounded-full bg-emerald-500 border border-slate-200 dark:border-slate-700"></button>
+                  <button className="size-6 rounded-full bg-orange-500 border border-slate-200 dark:border-slate-700"></button>
+                  <button className="size-6 rounded-full border border-gray-300 flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary"><span className="material-symbols-outlined text-sm">add</span></button>
                 </div>
               </div>
             </div>

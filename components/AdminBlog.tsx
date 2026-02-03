@@ -4,6 +4,14 @@ import { Screen, NavigationProps } from '../types';
 
 export default function AdminBlog({ navigateTo }: NavigationProps) {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [view, setView] = useState<'list' | 'editor'>('list');
+
+  // Mock data for editor
+  const [editorData, setEditorData] = useState({
+    title: '',
+    category: 'Career Advice',
+    content: ''
+  });
 
   return (
     <div className="flex h-screen w-full bg-background-light dark:bg-background-dark text-text-main dark:text-white font-display overflow-hidden">
@@ -106,270 +114,382 @@ export default function AdminBlog({ navigateTo }: NavigationProps) {
       </aside>
       <main className="flex flex-1 flex-col overflow-y-auto bg-[#f6f6f8] dark:bg-[#111421]">
         <div className="mx-auto w-full max-w-7xl px-6 py-8">
-          <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Blog Management</h2>
-              <p className="text-base text-slate-500 dark:text-slate-400">Manage posts, track performance, and organize content.</p>
-            </div>
-            <div className="flex gap-3">
-              <button className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-dark transition-colors shadow-sm shadow-primary/30">
-                <span className="material-symbols-outlined text-lg">add</span>
-                <span>Create New Post</span>
-              </button>
-            </div>
-          </header>
-          <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="flex flex-col gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] p-5 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Posts</p>
-                <span className="material-symbols-outlined text-primary/60 dark:text-primary-dark/60 text-xl">description</span>
-              </div>
-              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">124</p>
-              <div className="flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                <span className="material-symbols-outlined text-base">trending_up</span>
-                <span>+8</span>
-                <span className="font-normal text-slate-500 dark:text-slate-400 ml-1">this month</span>
-              </div>
-            </div>
-            <div className="flex flex-col gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] p-5 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Monthly Views</p>
-                <span className="material-symbols-outlined text-emerald-500/80 text-xl">visibility</span>
-              </div>
-              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">45.2k</p>
-              <div className="flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                <span className="material-symbols-outlined text-base">trending_up</span>
-                <span>+14.5%</span>
-                <span className="font-normal text-slate-500 dark:text-slate-400 ml-1">vs last month</span>
-              </div>
-            </div>
-            <div className="flex flex-col gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] p-5 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Top Category</p>
-                <span className="material-symbols-outlined text-orange-500/80 text-xl">category</span>
-              </div>
-              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">Career Advice</p>
-              <div className="flex items-center gap-1 text-sm font-medium text-slate-500 dark:text-slate-400">
-                <span>42% of total traffic</span>
-              </div>
-            </div>
-          </section>
-          <section className="flex flex-col gap-4">
-            <div className="border-b border-slate-200 dark:border-slate-700">
-              <div className="flex gap-8">
-                <button className="relative pb-4 text-sm font-bold text-primary dark:text-primary-dark">
-                  All Posts
-                  <span className="absolute bottom-0 left-0 h-0.5 w-full bg-primary dark:bg-primary-dark"></span>
-                </button>
-                <button className="pb-4 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-                  Published
-                </button>
-                <button className="pb-4 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-                  Drafts
-                </button>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-4 py-2">
-              <div className="flex flex-1 items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] px-3 py-2 shadow-sm max-w-md">
-                <span className="material-symbols-outlined text-slate-500 dark:text-slate-400">search</span>
-                <input className="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none" placeholder="Search posts..." type="text"/>
-              </div>
-              <div className="flex gap-2">
-                <button className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] px-3 py-2 text-sm font-medium text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                  <span className="material-symbols-outlined text-lg">filter_list</span>
-                  Filter
-                </button>
-                <button className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] px-3 py-2 text-sm font-medium text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                  <span className="material-symbols-outlined text-lg">sort</span>
-                  Sort
-                </button>
-              </div>
-            </div>
-            <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-white/5">
-                    <tr>
-                      <th className="w-12 px-6 py-4">
-                        <input className="h-4 w-4 rounded border-slate-200 text-primary focus:ring-primary dark:border-slate-700 dark:bg-white/10" type="checkbox"/>
-                      </th>
-                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Title</th>
-                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Category</th>
-                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Author</th>
-                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Publish Date</th>
-                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
-                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                    <tr className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4">
-                        <input className="h-4 w-4 rounded border-slate-200 text-primary focus:ring-primary dark:border-slate-700 dark:bg-white/10" type="checkbox"/>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white">10 Tips for Landing Your Dream Internship</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]">A comprehensive guide to standing out...</p>
+          
+          {view === 'list' && (
+            <>
+              <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Blog Management</h2>
+                  <p className="text-base text-slate-500 dark:text-slate-400">Manage posts, track performance, and organize content.</p>
+                </div>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setView('editor')}
+                    className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-dark transition-colors shadow-sm shadow-primary/30"
+                  >
+                    <span className="material-symbols-outlined text-lg">add</span>
+                    <span>Create New Post</span>
+                  </button>
+                </div>
+              </header>
+              <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="flex flex-col gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] p-5 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Posts</p>
+                    <span className="material-symbols-outlined text-primary/60 dark:text-primary-dark/60 text-xl">description</span>
+                  </div>
+                  <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">124</p>
+                  <div className="flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                    <span className="material-symbols-outlined text-base">trending_up</span>
+                    <span>+8</span>
+                    <span className="font-normal text-slate-500 dark:text-slate-400 ml-1">this month</span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] p-5 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Monthly Views</p>
+                    <span className="material-symbols-outlined text-emerald-500/80 text-xl">visibility</span>
+                  </div>
+                  <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">45.2k</p>
+                  <div className="flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                    <span className="material-symbols-outlined text-base">trending_up</span>
+                    <span>+14.5%</span>
+                    <span className="font-normal text-slate-500 dark:text-slate-400 ml-1">vs last month</span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] p-5 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Top Category</p>
+                    <span className="material-symbols-outlined text-orange-500/80 text-xl">category</span>
+                  </div>
+                  <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">Career Advice</p>
+                  <div className="flex items-center gap-1 text-sm font-medium text-slate-500 dark:text-slate-400">
+                    <span>42% of total traffic</span>
+                  </div>
+                </div>
+              </section>
+              <section className="flex flex-col gap-4">
+                <div className="border-b border-slate-200 dark:border-slate-700">
+                  <div className="flex gap-8">
+                    <button className="relative pb-4 text-sm font-bold text-primary dark:text-primary-dark">
+                      All Posts
+                      <span className="absolute bottom-0 left-0 h-0.5 w-full bg-primary dark:bg-primary-dark"></span>
+                    </button>
+                    <button className="pb-4 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                      Published
+                    </button>
+                    <button className="pb-4 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                      Drafts
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-4 py-2">
+                  <div className="flex flex-1 items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] px-3 py-2 shadow-sm max-w-md">
+                    <span className="material-symbols-outlined text-slate-500 dark:text-slate-400">search</span>
+                    <input className="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none" placeholder="Search posts..." type="text"/>
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] px-3 py-2 text-sm font-medium text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                      <span className="material-symbols-outlined text-lg">filter_list</span>
+                      Filter
+                    </button>
+                    <button className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] px-3 py-2 text-sm font-medium text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                      <span className="material-symbols-outlined text-lg">sort</span>
+                      Sort
+                    </button>
+                  </div>
+                </div>
+                <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-white/5">
+                        <tr>
+                          <th className="w-12 px-6 py-4">
+                            <input className="h-4 w-4 rounded border-slate-200 text-primary focus:ring-primary dark:border-slate-700 dark:bg-white/10" type="checkbox"/>
+                          </th>
+                          <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Title</th>
+                          <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Category</th>
+                          <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Author</th>
+                          <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Publish Date</th>
+                          <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
+                          <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                        <tr className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4">
+                            <input className="h-4 w-4 rounded border-slate-200 text-primary focus:ring-primary dark:border-slate-700 dark:bg-white/10" type="checkbox"/>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white">10 Tips for Landing Your Dream Internship</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]">A comprehensive guide to standing out...</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-white/5 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                              Career Advice
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <div className="h-6 w-6 rounded-full bg-cover bg-center" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBuz7qhWBsQWRjQG1k4CGzFYXhvsFourXvcGFagkS8Ygc6l63kf_qKcXMNXo-XVoFmsea9D7RojO2v9OQMLgttwk1_1u0Sefnl9iGveWDk1yjDa_QNz60aKEgmugT98Txyt38TOYyQMofKNHNsNclFGBFIyOx-Pp3k9dCugBZvO2F-jiAog2elvqhTUfgxkZ76fxUGvaAwgKP6ELOG_Pjri33lWH4w8m1KEmJ6TIWTLY4NQXPNvKCff1WFCaRn_73oR3o1z2hQVLt4')" }}></div>
+                              <span className="text-sm text-slate-900 dark:text-white">Jane Doe</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">Oct 24, 2023</td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                              Published
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 transition-colors" title="Edit">
+                                <span className="material-symbols-outlined text-[20px]">edit</span>
+                              </button>
+                              <button className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Unpublish">
+                                <span className="material-symbols-outlined text-[20px]">unpublished</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4">
+                            <input className="h-4 w-4 rounded border-slate-200 text-primary focus:ring-primary dark:border-slate-700 dark:bg-white/10" type="checkbox"/>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white">Scholarship Application Guide 2024</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]">Deadlines and requirements for the upcoming...</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-white/5 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                              Financial Aid
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <div className="h-6 w-6 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold">MK</div>
+                              <span className="text-sm text-slate-900 dark:text-white">Mike K.</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">Oct 23, 2023</td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                              Published
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 transition-colors" title="Edit">
+                                <span className="material-symbols-outlined text-[20px]">edit</span>
+                              </button>
+                              <button className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Unpublish">
+                                <span className="material-symbols-outlined text-[20px]">unpublished</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4">
+                            <input className="h-4 w-4 rounded border-slate-200 text-primary focus:ring-primary dark:border-slate-700 dark:bg-white/10" type="checkbox"/>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white">Resume Building Workshop: Recap</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]">Key takeaways from our recent workshop...</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-white/5 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                              Events
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <div className="h-6 w-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-[10px] font-bold">AL</div>
+                              <span className="text-sm text-slate-900 dark:text-white">Alex L.</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">--</td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                              <span className="h-1.5 w-1.5 rounded-full bg-gray-500"></span>
+                              Draft
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 transition-colors" title="Edit">
+                                <span className="material-symbols-outlined text-[20px]">edit</span>
+                              </button>
+                              <button className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Delete">
+                                <span className="material-symbols-outlined text-[20px]">delete</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4">
+                            <input className="h-4 w-4 rounded border-slate-200 text-primary focus:ring-primary dark:border-slate-700 dark:bg-white/10" type="checkbox"/>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white">How to Ace Your First Interview</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]">Preparing for common interview questions...</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-white/5 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                              Career Advice
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <div className="h-6 w-6 rounded-full bg-cover bg-center" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBuz7qhWBsQWRjQG1k4CGzFYXhvsFourXvcGFagkS8Ygc6l63kf_qKcXMNXo-XVoFmsea9D7RojO2v9OQMLgttwk1_1u0Sefnl9iGveWDk1yjDa_QNz60aKEgmugT98Txyt38TOYyQMofKNHNsNclFGBFIyOx-Pp3k9dCugBZvO2F-jiAog2elvqhTUfgxkZ76fxUGvaAwgKP6ELOG_Pjri33lWH4w8m1KEmJ6TIWTLY4NQXPNvKCff1WFCaRn_73oR3o1z2hQVLt4')" }}></div>
+                              <span className="text-sm text-slate-900 dark:text-white">Jane Doe</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">Oct 20, 2023</td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                              Published
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 transition-colors" title="Edit">
+                                <span className="material-symbols-outlined text-[20px]">edit</span>
+                              </button>
+                              <button className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Unpublish">
+                                <span className="material-symbols-outlined text-[20px]">unpublished</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] px-6 py-3">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Showing 1-4 of 28 posts</p>
+                    <div className="flex gap-2">
+                      <button className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-slate-900 dark:text-white disabled:opacity-50" disabled={true}>Previous</button>
+                      <button className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-slate-900 dark:text-white">Next</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </>
+          )}
+
+          {view === 'editor' && (
+            <div className="h-full flex flex-col">
+              <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <button onClick={() => setView('list')} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-slate-500 dark:text-slate-400">
+                    <span className="material-symbols-outlined">arrow_back</span>
+                  </button>
+                  <div className="flex flex-col gap-1">
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Create New Post</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Drafting a new blog entry</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                    Save Draft
+                  </button>
+                  <button className="px-4 py-2 rounded-lg bg-primary text-sm font-bold text-white hover:bg-primary-dark transition-colors shadow-sm">
+                    Publish Post
+                  </button>
+                </div>
+              </header>
+
+              <div className="flex flex-col lg:flex-row gap-8">
+                {/* Main Editor */}
+                <div className="flex-1 flex flex-col gap-6">
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] p-6 shadow-sm">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-bold text-slate-900 dark:text-white mb-2">Title</label>
+                        <input 
+                          type="text" 
+                          placeholder="Enter post title..." 
+                          className="w-full text-2xl font-bold bg-transparent border-0 border-b-2 border-slate-100 dark:border-slate-700 focus:border-primary focus:ring-0 px-0 py-2 placeholder-slate-300 dark:placeholder-slate-600 transition-colors"
+                          value={editorData.title}
+                          onChange={(e) => setEditorData({...editorData, title: e.target.value})}
+                        />
+                      </div>
+                      <div className="min-h-[400px] mt-4">
+                        <textarea 
+                          className="w-full h-full min-h-[400px] resize-none bg-transparent border-0 focus:ring-0 p-0 text-slate-600 dark:text-slate-300 leading-relaxed text-lg"
+                          placeholder="Start writing your amazing content here..."
+                          value={editorData.content}
+                          onChange={(e) => setEditorData({...editorData, content: e.target.value})}
+                        ></textarea>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sidebar Settings */}
+                <div className="w-full lg:w-80 flex flex-col gap-6">
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] p-5 shadow-sm">
+                    <h3 className="font-bold text-slate-900 dark:text-white mb-4">Post Settings</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Category</label>
+                        <select 
+                          className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-white/5 py-2 px-3 text-sm focus:border-primary focus:ring-primary"
+                          value={editorData.category}
+                          onChange={(e) => setEditorData({...editorData, category: e.target.value})}
+                        >
+                          <option>Career Advice</option>
+                          <option>Study Tips</option>
+                          <option>Productivity</option>
+                          <option>Student Life</option>
+                          <option>Tools</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Slug</label>
+                        <input type="text" className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-white/5 py-2 px-3 text-sm text-slate-500" value={editorData.title.toLowerCase().replace(/\s+/g, '-')} readOnly />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Cover Image</label>
+                        <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                          <span className="material-symbols-outlined text-slate-400 text-3xl mb-2">image</span>
+                          <span className="text-xs text-slate-500">Click to upload cover image</span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-white/5 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                          Career Advice
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-full bg-cover bg-center" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBuz7qhWBsQWRjQG1k4CGzFYXhvsFourXvcGFagkS8Ygc6l63kf_qKcXMNXo-XVoFmsea9D7RojO2v9OQMLgttwk1_1u0Sefnl9iGveWDk1yjDa_QNz60aKEgmugT98Txyt38TOYyQMofKNHNsNclFGBFIyOx-Pp3k9dCugBZvO2F-jiAog2elvqhTUfgxkZ76fxUGvaAwgKP6ELOG_Pjri33lWH4w8m1KEmJ6TIWTLY4NQXPNvKCff1WFCaRn_73oR3o1z2hQVLt4')" }}></div>
-                          <span className="text-sm text-slate-900 dark:text-white">Jane Doe</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">Oct 24, 2023</td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                          Published
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 transition-colors" title="Edit">
-                            <span className="material-symbols-outlined text-[20px]">edit</span>
-                          </button>
-                          <button className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Unpublish">
-                            <span className="material-symbols-outlined text-[20px]">unpublished</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4">
-                        <input className="h-4 w-4 rounded border-slate-200 text-primary focus:ring-primary dark:border-slate-700 dark:bg-white/10" type="checkbox"/>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white">Scholarship Application Guide 2024</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]">Deadlines and requirements for the upcoming...</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-white/5 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                          Financial Aid
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold">MK</div>
-                          <span className="text-sm text-slate-900 dark:text-white">Mike K.</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">Oct 23, 2023</td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                          Published
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 transition-colors" title="Edit">
-                            <span className="material-symbols-outlined text-[20px]">edit</span>
-                          </button>
-                          <button className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Unpublish">
-                            <span className="material-symbols-outlined text-[20px]">unpublished</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4">
-                        <input className="h-4 w-4 rounded border-slate-200 text-primary focus:ring-primary dark:border-slate-700 dark:bg-white/10" type="checkbox"/>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white">Resume Building Workshop: Recap</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]">Key takeaways from our recent workshop...</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-white/5 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                          Events
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-[10px] font-bold">AL</div>
-                          <span className="text-sm text-slate-900 dark:text-white">Alex L.</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">--</td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                          <span className="h-1.5 w-1.5 rounded-full bg-gray-500"></span>
-                          Draft
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 transition-colors" title="Edit">
-                            <span className="material-symbols-outlined text-[20px]">edit</span>
-                          </button>
-                          <button className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Delete">
-                            <span className="material-symbols-outlined text-[20px]">delete</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4">
-                        <input className="h-4 w-4 rounded border-slate-200 text-primary focus:ring-primary dark:border-slate-700 dark:bg-white/10" type="checkbox"/>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white">How to Ace Your First Interview</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]">Preparing for common interview questions...</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-white/5 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                          Career Advice
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-full bg-cover bg-center" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBuz7qhWBsQWRjQG1k4CGzFYXhvsFourXvcGFagkS8Ygc6l63kf_qKcXMNXo-XVoFmsea9D7RojO2v9OQMLgttwk1_1u0Sefnl9iGveWDk1yjDa_QNz60aKEgmugT98Txyt38TOYyQMofKNHNsNclFGBFIyOx-Pp3k9dCugBZvO2F-jiAog2elvqhTUfgxkZ76fxUGvaAwgKP6ELOG_Pjri33lWH4w8m1KEmJ6TIWTLY4NQXPNvKCff1WFCaRn_73oR3o1z2hQVLt4')" }}></div>
-                          <span className="text-sm text-slate-900 dark:text-white">Jane Doe</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">Oct 20, 2023</td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                          Published
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 transition-colors" title="Edit">
-                            <span className="material-symbols-outlined text-[20px]">edit</span>
-                          </button>
-                          <button className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Unpublish">
-                            <span className="material-symbols-outlined text-[20px]">unpublished</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] px-6 py-3">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Showing 1-4 of 28 posts</p>
-                <div className="flex gap-2">
-                  <button className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-slate-900 dark:text-white disabled:opacity-50" disabled={true}>Previous</button>
-                  <button className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-slate-900 dark:text-white">Next</button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] p-5 shadow-sm">
+                    <h3 className="font-bold text-slate-900 dark:text-white mb-4">Publishing</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-slate-600 dark:text-slate-300">Visibility</span>
+                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded">Public</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-slate-600 dark:text-slate-300">Schedule</span>
+                        <button className="text-xs text-primary font-medium hover:underline">Set date</button>
+                      </div>
+                      <button className="w-full py-2 rounded-lg border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">
+                        Delete Post
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </section>
+          )}
+
         </div>
       </main>
     </div>
