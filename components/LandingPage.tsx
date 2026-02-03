@@ -1,6 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { Screen, NavigationProps } from '../types';
 
+const TypingAnimation = () => {
+  const [text, setText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [loopNum, setLoopNum] = useState(0);
+  const [typingSpeed, setTypingSpeed] = useState(150);
+
+  const phrases = [
+    "while you study",
+    "with ease",
+    "like a pro", 
+    "for your future"
+  ];
+
+  useEffect(() => {
+    const handleTyping = () => {
+      const i = loopNum % phrases.length;
+      const fullText = phrases[i];
+
+      setText(isDeleting 
+        ? fullText.substring(0, text.length - 1) 
+        : fullText.substring(0, text.length + 1)
+      );
+
+      setTypingSpeed(isDeleting ? 30 : 150);
+
+      if (!isDeleting && text === fullText) {
+        setTimeout(() => setIsDeleting(true), 1500);
+      } else if (isDeleting && text === '') {
+        setIsDeleting(false);
+        setLoopNum(loopNum + 1);
+      }
+    };
+
+    const timer = setTimeout(handleTyping, typingSpeed);
+    return () => clearTimeout(timer);
+  }, [text, isDeleting, loopNum, typingSpeed]);
+
+  return (
+    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600">
+      {text}
+      <span className="animate-pulse border-r-2 border-purple-600 ml-1"></span>
+    </span>
+  );
+};
+
 export default function LandingPage({ navigateTo }: NavigationProps) {
   const [activeSlide, setActiveSlide] = useState(0);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -143,9 +188,13 @@ export default function LandingPage({ navigateTo }: NavigationProps) {
                 </span>
                 New: AI Cover Letter Generator
               </div>
-              <h1 className="text-5xl font-black leading-[1.1] tracking-tight text-slate-900 sm:text-6xl drop-shadow-sm">
+
+
+// ... inside LandingPage component ...
+
+              <h1 className="text-5xl font-black leading-[1.1] tracking-tight text-slate-900 sm:text-6xl drop-shadow-sm min-h-[140px] sm:min-h-[auto]">
                 Build your career <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600">while you study</span>
+                <TypingAnimation />
               </h1>
               <p className="max-w-xl text-lg leading-relaxed text-slate-600">
                 The all-in-one operating system for high-achieving students. Manage internships, grades, applications, and networking in one seamless dashboard.

@@ -31,8 +31,9 @@ router.get('/', async (req: AuthenticatedRequest, res, next) => {
 // Mark as read
 router.patch('/:id/read', async (req: AuthenticatedRequest, res, next) => {
   try {
+    const { id } = req.params;
     const notification = await prisma.notification.update({
-      where: { id: req.params.id as string, userId: req.user!.id },
+      where: { id: String(id), userId: req.user!.id },
       data: { isRead: true },
     });
     res.json(notification);
