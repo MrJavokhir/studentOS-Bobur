@@ -64,9 +64,10 @@ app.use((req, res) => {
 });
 
 const PORT = parseInt(env.PORT, 10);
+const HOST = '0.0.0.0'; // Required for Railway - must listen on all interfaces
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 Server running on http://${HOST}:${PORT}`);
   console.log(`📝 Environment: ${env.NODE_ENV}`);
 });
 
