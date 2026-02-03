@@ -5,7 +5,7 @@ import { requireEmployer } from '../middleware/role.middleware.js';
 
 const router = Router();
 
-// Get application details (for employer)
+// Get application details (for employer or applicant)
 router.get('/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const application = await prisma.jobApplication.findUnique({
@@ -16,12 +16,29 @@ router.get('/:id', authenticate, async (req: AuthenticatedRequest, res, next) =>
             studentProfile: true,
           },
         },
-        job: true,
+        job: {
+          include: {
+            employer: true,
+          },
+        },
       },
     });
 
     if (!application) {
       res.status(404).json({ error: 'Application not found' });
+      return;
+    }
+
+    // Data isolation check: Only allow access if:
+    // 1. User is the applicant themselves
+    // 2. User is the employer who owns the job
+    // 3. User is an admin
+    const isApplicant = application.userId === req.user!.id;
+    const isJobOwner = application.job.employer?.userId === req.user!.id;
+    const isAdmin = req.user!.role === 'ADMIN';
+
+    if (!isApplicant && !isJobOwner && !isAdmin) {
+      res.status(403).json({ error: 'Access denied' });
       return;
     }
 
@@ -36,7 +53,30 @@ router.patch('/:id/status', authenticate, requireEmployer, async (req: Authentic
   try {
     const { status, notes } = req.body;
 
-    const application = await prisma.jobApplication.update({
+    // First check if this employer owns the job
+    const application = await prisma.jobApplication.findUnique({
+      where: { id: req.params.id },
+      include: {
+        job: {
+          include: {
+            employer: true,
+          },
+        },
+      },
+    });
+
+    if (!application) {
+      res.status(404).json({ error: 'Application not found' });
+      return;
+    }
+
+    // Verify ownership
+    if (application.job.employer?.userId !== req.user!.id && req.user!.role !== 'ADMIN') {
+      res.status(403).json({ error: 'Not authorized to update this application' });
+      return;
+    }
+
+    const updated = await prisma.jobApplication.update({
       where: { id: req.params.id },
       data: {
         status,
@@ -44,7 +84,7 @@ router.patch('/:id/status', authenticate, requireEmployer, async (req: Authentic
       },
     });
 
-    res.json(application);
+    res.json(updated);
   } catch (error) {
     next(error);
   }

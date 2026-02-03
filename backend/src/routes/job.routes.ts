@@ -297,6 +297,31 @@ router.get('/employer/list', authenticate, requireEmployer, async (req: Authenti
 // Employer: Update job
 router.patch('/:id', authenticate, requireEmployer, async (req: AuthenticatedRequest, res, next) => {
   try {
+    // Verify ownership
+    const employerProfile = await prisma.employerProfile.findUnique({
+      where: { userId: req.user!.id },
+    });
+
+    if (!employerProfile) {
+      res.status(400).json({ error: 'Employer profile required' });
+      return;
+    }
+
+    const existingJob = await prisma.job.findUnique({
+      where: { id: req.params.id },
+    });
+
+    if (!existingJob) {
+      res.status(404).json({ error: 'Job not found' });
+      return;
+    }
+
+    // Check ownership (only job owner or admin can update)
+    if (existingJob.employerId !== employerProfile.id && req.user!.role !== 'ADMIN') {
+      res.status(403).json({ error: 'Not authorized to update this job' });
+      return;
+    }
+
     const job = await prisma.job.update({
       where: { id: req.params.id },
       data: req.body,
@@ -310,6 +335,31 @@ router.patch('/:id', authenticate, requireEmployer, async (req: AuthenticatedReq
 // Employer: Delete job
 router.delete('/:id', authenticate, requireEmployer, async (req: AuthenticatedRequest, res, next) => {
   try {
+    // Verify ownership
+    const employerProfile = await prisma.employerProfile.findUnique({
+      where: { userId: req.user!.id },
+    });
+
+    if (!employerProfile) {
+      res.status(400).json({ error: 'Employer profile required' });
+      return;
+    }
+
+    const existingJob = await prisma.job.findUnique({
+      where: { id: req.params.id },
+    });
+
+    if (!existingJob) {
+      res.status(404).json({ error: 'Job not found' });
+      return;
+    }
+
+    // Check ownership (only job owner or admin can delete)
+    if (existingJob.employerId !== employerProfile.id && req.user!.role !== 'ADMIN') {
+      res.status(403).json({ error: 'Not authorized to delete this job' });
+      return;
+    }
+
     await prisma.job.delete({ where: { id: req.params.id } });
     res.status(204).send();
   } catch (error) {
