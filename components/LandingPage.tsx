@@ -190,7 +190,7 @@ export default function LandingPage({ navigateTo }: NavigationProps) {
               </div>
 
 
-// ... inside LandingPage component ...
+
 
               <h1 className="text-5xl font-black leading-[1.1] tracking-tight text-slate-900 sm:text-6xl drop-shadow-sm min-h-[140px] sm:min-h-[auto]">
                 Build your career <br />
