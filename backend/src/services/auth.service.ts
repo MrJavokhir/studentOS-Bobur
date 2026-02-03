@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import prisma from '../config/database.js';
 import { UserRole } from '@prisma/client';
@@ -24,13 +24,13 @@ export const comparePasswords = async (
 export const generateAccessToken = (payload: TokenPayload): string => {
   return jwt.sign(payload, env.JWT_SECRET, {
     expiresIn: env.JWT_EXPIRES_IN,
-  });
+  } as SignOptions);
 };
 
 export const generateRefreshToken = async (userId: string): Promise<string> => {
   const token = jwt.sign({ userId }, env.JWT_REFRESH_SECRET, {
     expiresIn: env.JWT_REFRESH_EXPIRES_IN,
-  });
+  } as SignOptions);
 
   // Calculate expiration
   const expiresAt = new Date();
