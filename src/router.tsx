@@ -46,6 +46,8 @@ const SignUpStep2 = withNavigate(lazyRetry(() => import('../components/SignUpSte
 const AboutUs = withNavigate(lazyRetry(() => import('../components/AboutUs')));
 const Blog = withNavigate(lazyRetry(() => import('../components/Blog')));
 const ContactSupport = withNavigate(lazyRetry(() => import('../components/ContactSupport')));
+const TermsOfService = withNavigate(lazyRetry(() => import('../components/TermsOfService')));
+const PrivacyPolicy = withNavigate(lazyRetry(() => import('../components/PrivacyPolicy')));
 
 // App
 const Dashboard = withNavigate(lazyRetry(() => import('../components/Dashboard')));
@@ -130,6 +132,22 @@ export const router = createBrowserRouter([
         element: (
           <Wrap>
             <ContactSupport />
+          </Wrap>
+        ),
+      },
+      {
+        path: '/terms',
+        element: (
+          <Wrap>
+            <TermsOfService />
+          </Wrap>
+        ),
+      },
+      {
+        path: '/privacy',
+        element: (
+          <Wrap>
+            <PrivacyPolicy />
           </Wrap>
         ),
       },

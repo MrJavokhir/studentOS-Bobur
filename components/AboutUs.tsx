@@ -270,8 +270,8 @@ export default function AboutUs({ navigateTo }: NavigationProps) {
               <div>
                 <h4 className="font-bold text-slate-900 dark:text-white mb-4">Legal</h4>
                 <ul className="space-y-2 text-sm text-slate-500 dark:text-slate-400">
-                  <li><button className="hover:text-primary transition-colors">Privacy</button></li>
-                  <li><button className="hover:text-primary transition-colors">Terms</button></li>
+                  <li><a href="/privacy" className="hover:text-primary transition-colors">Privacy</a></li>
+                  <li><a href="/terms" className="hover:text-primary transition-colors">Terms</a></li>
                   <li><button className="hover:text-primary transition-colors">Security</button></li>
                 </ul>
               </div>

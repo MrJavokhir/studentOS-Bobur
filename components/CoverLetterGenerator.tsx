@@ -1,12 +1,20 @@
 
 import React, { useState, useRef } from 'react';
 import { Screen, NavigationProps } from '../types';
+import { aiApi } from '../src/services/api';
 
 export default function CoverLetterGenerator({ navigateTo }: NavigationProps) {
   const [isSidebarLocked, setIsSidebarLocked] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedLetter, setGeneratedLetter] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  
+  // Form state
+  const [company, setCompany] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+  
   const hoverTimeoutRef = useRef<any>(null);
 
   const handleMouseEnter = () => {
@@ -25,24 +33,28 @@ export default function CoverLetterGenerator({ navigateTo }: NavigationProps) {
 
   const isSidebarExpanded = isSidebarLocked || isSidebarHovered;
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    if (!company.trim() || !jobTitle.trim() || !jobDescription.trim()) {
+      setError('Please fill in all required fields');
+      return;
+    }
+    
     setIsGenerating(true);
-    // Simulate API call
-    setTimeout(() => {
-      setGeneratedLetter(`Dear Hiring Manager,
-
-I am writing to express my enthusiastic interest in the Product Designer position at TechFlow Inc., as advertised. With a strong foundation in user-centric design principles and a proven track record of creating intuitive digital experiences, I am eager to contribute to your team's innovative projects.
-
-During my time at University of Tech, I led several design initiatives that resulted in measurable improvements in user engagement. My proficiency in Figma, combined with my ability to translate complex requirements into elegant solutions, aligns perfectly with TechFlow's mission to simplify technology for everyone.
-
-I am particularly drawn to TechFlow's recent work on accessibility, a passion I share and have actively pursued through my coursework and personal projects. I am confident that my creative problem-solving skills and dedication to design excellence would make me a valuable asset to your team.
-
-Thank you for considering my application. I look forward to the possibility of discussing how my background, skills, and enthusiasm can contribute to the continued success of TechFlow Inc.
-
-Sincerely,
-Alex Morgan`);
+    setError(null);
+    
+    try {
+      const response = await aiApi.generateCoverLetter({
+        jobTitle: jobTitle.trim(),
+        company: company.trim(),
+        jobDescription: jobDescription.trim(),
+      });
+      setGeneratedLetter((response.data as { coverLetter: string }).coverLetter || '');
+    } catch (err: any) {
+      console.error('Failed to generate cover letter:', err);
+      setError(err.response?.data?.error || 'Failed to generate cover letter. Please try again.');
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -147,16 +159,33 @@ Alex Morgan`);
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-text-sub uppercase">Company Name</label>
-                    <input className="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:border-primary focus:ring-primary/20" type="text" placeholder="e.g. TechFlow Inc." />
+                    <input 
+                      className="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:border-primary focus:ring-primary/20" 
+                      type="text" 
+                      placeholder="e.g. TechFlow Inc."
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-text-sub uppercase">Job Title</label>
-                    <input className="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:border-primary focus:ring-primary/20" type="text" placeholder="e.g. Product Designer" />
+                    <input 
+                      className="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:border-primary focus:ring-primary/20" 
+                      type="text" 
+                      placeholder="e.g. Product Designer"
+                      value={jobTitle}
+                      onChange={(e) => setJobTitle(e.target.value)}
+                    />
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-text-sub uppercase">Job Description</label>
-                  <textarea className="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:border-primary focus:ring-primary/20 resize-none h-32" placeholder="Paste the job description here..."></textarea>
+                  <textarea 
+                    className="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:border-primary focus:ring-primary/20 resize-none h-32" 
+                    placeholder="Paste the job description here..."
+                    value={jobDescription}
+                    onChange={(e) => setJobDescription(e.target.value)}
+                  ></textarea>
                 </div>
               </div>
 

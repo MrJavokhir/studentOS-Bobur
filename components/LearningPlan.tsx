@@ -1,11 +1,49 @@
 
 import React, { useState, useRef } from 'react';
 import { Screen, NavigationProps } from '../types';
+import { aiApi } from '../src/services/api';
+
+interface LearningPlanData {
+  title: string;
+  timeframe: string;
+  phases: Array<{
+    title: string;
+    duration: string;
+    topics: string[];
+    resources: string[];
+  }>;
+}
 
 export default function LearningPlan({ navigateTo }: NavigationProps) {
   const [isSidebarLocked, setIsSidebarLocked] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const [goal, setGoal] = useState('');
+  const [timeframe, setTimeframe] = useState('4 weeks');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [generatedPlan, setGeneratedPlan] = useState<LearningPlanData | null>(null);
   const hoverTimeoutRef = useRef<any>(null);
+
+  const handleGeneratePlan = async () => {
+    if (!goal.trim()) {
+      setError('Please enter a learning goal');
+      return;
+    }
+    
+    setIsGenerating(true);
+    setError(null);
+    
+    try {
+      const response = await aiApi.generateLearningPlan({ goal: goal.trim(), timeframe });
+      const data = response.data as LearningPlanData;
+      setGeneratedPlan(data);
+    } catch (err: any) {
+      console.error('Failed to generate learning plan:', err);
+      setError(err.response?.data?.error || 'Failed to generate learning plan. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
@@ -122,12 +160,45 @@ export default function LearningPlan({ navigateTo }: NavigationProps) {
               </div>
             </div>
             <div className="h-8 w-px bg-gray-200 dark:bg-gray-700"></div>
-            <div className="relative">
-              <label className="block text-xs text-text-sub font-medium mb-1">What is your goal?</label>
-              <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-card-dark border border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary focus:border-primary transition-colors text-sm font-medium shadow-sm w-48 justify-between">
-                <span>Get Hired</span>
-                <span className="material-symbols-outlined text-gray-400 text-[18px]">expand_more</span>
-              </button>
+            <div className="relative flex flex-col gap-2">
+              <label className="block text-xs text-text-sub font-medium">What do you want to learn?</label>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  value={goal}
+                  onChange={(e) => setGoal(e.target.value)}
+                  placeholder="e.g. Become a Junior Product Designer"
+                  className="flex-1 px-4 py-2 bg-white dark:bg-card-dark border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+                <select 
+                  value={timeframe}
+                  onChange={(e) => setTimeframe(e.target.value)}
+                  className="px-4 py-2 bg-white dark:bg-card-dark border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
+                >
+                  <option value="2 weeks">2 weeks</option>
+                  <option value="4 weeks">4 weeks</option>
+                  <option value="8 weeks">8 weeks</option>
+                  <option value="12 weeks">12 weeks</option>
+                </select>
+                <button 
+                  onClick={handleGeneratePlan}
+                  disabled={isGenerating || !goal.trim()}
+                  className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isGenerating ? (
+                    <>
+                      <span className="material-symbols-outlined animate-spin text-[18px]">sync</span>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
+                      Generate Plan
+                    </>
+                  )}
+                </button>
+              </div>
+              {error && <p className="text-sm text-red-500">{error}</p>}
             </div>
           </div>
         </header>

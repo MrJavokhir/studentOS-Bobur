@@ -204,9 +204,9 @@ export default function SignUpStep1({ navigateTo }: NavigationProps) {
             </form>
             <p className="mt-8 text-center text-xs text-slate-500">
               By clicking "Create Account", you agree to our 
-              <a href="#" className="font-medium text-slate-700 hover:text-primary underline decoration-slate-300 underline-offset-4 hover:decoration-primary transition-colors ml-1">Terms of Service</a>
-              <span className="mx-1">and</span>
-              <a href="#" className="font-medium text-slate-700 hover:text-primary underline decoration-slate-300 underline-offset-4 hover:decoration-primary transition-colors">Privacy Policy</a>.
+              <a href="/terms" className="font-medium text-slate-700 hover:text-primary underline decoration-slate-300 underline-offset-4 hover:decoration-primary transition-colors ml-1">Terms of Service</a>
+              {' '}and{' '}
+              <a href="/privacy" className="font-medium text-slate-700 hover:text-primary underline decoration-slate-300 underline-offset-4 hover:decoration-primary transition-colors">Privacy Policy</a>.
             </p>
           </div>
           <p className="text-center text-sm font-medium text-slate-600">

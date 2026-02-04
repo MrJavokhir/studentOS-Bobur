@@ -265,8 +265,8 @@ export default function ContactSupport({ navigateTo }: NavigationProps) {
             © 2023 StudentOS Inc. All rights reserved.
           </div>
           <div className="flex gap-6">
-            <a href="#" className="text-sm text-text-sub hover:text-primary dark:text-gray-500 dark:hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="text-sm text-text-sub hover:text-primary dark:text-gray-500 dark:hover:text-white transition-colors">Terms of Service</a>
+            <a href="/privacy" className="text-sm text-text-sub hover:text-primary dark:text-gray-500 dark:hover:text-white transition-colors">Privacy Policy</a>
+            <a href="/terms" className="text-sm text-text-sub hover:text-primary dark:text-gray-500 dark:hover:text-white transition-colors">Terms of Service</a>
             <button onClick={() => navigateTo(Screen.CONTACT)} className="text-sm text-text-sub hover:text-primary dark:text-gray-500 dark:hover:text-white transition-colors">Contact Support</button>
           </div>
         </div>

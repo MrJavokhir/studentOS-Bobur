@@ -516,8 +516,8 @@ export default function LandingPage({ navigateTo }: NavigationProps) {
               <span className="text-lg font-bold text-slate-900">StudentOS</span>
             </div>
             <div className="flex flex-wrap justify-center gap-8">
-              <a href="#" className="text-sm text-slate-500 hover:text-primary transition-colors">Privacy Policy</a>
-              <a href="#" className="text-sm text-slate-500 hover:text-primary transition-colors">Terms of Service</a>
+              <a href="/privacy" className="text-sm text-slate-500 hover:text-primary transition-colors">Privacy Policy</a>
+              <a href="/terms" className="text-sm text-slate-500 hover:text-primary transition-colors">Terms of Service</a>
               <button onClick={() => navigateTo(Screen.CONTACT)} className="text-sm text-slate-500 hover:text-primary transition-colors">Contact Support</button>
             </div>
             <div className="flex gap-4">

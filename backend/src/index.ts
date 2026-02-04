@@ -6,6 +6,7 @@ import { env } from './config/env.js';
 import { errorHandler } from './middleware/error.middleware.js';
 
 // Routes
+import employerRoutes from './routes/employer.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import scholarshipRoutes from './routes/scholarship.routes.js';
@@ -58,6 +59,7 @@ app.use('/api/habits', habitRoutes);
 app.use('/api/blog', blogRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/employer', employerRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/notifications', notificationRoutes);

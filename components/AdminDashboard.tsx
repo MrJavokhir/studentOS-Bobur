@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Screen, NavigationProps } from '../types';
 import { adminApi } from '../src/services/api';
+import { downloadCSV } from '../src/utils/csv';
 import toast from 'react-hot-toast';
 
 interface AdminStats {
@@ -42,9 +43,28 @@ export default function AdminDashboard({ navigateTo }: NavigationProps) {
     }
   };
 
-  const handleExport = () => {
-    toast.success('Report generation started...', { icon: '📄' });
-    setTimeout(() => toast('Export feature coming soon!', { icon: '🚧' }), 1000);
+  const handleExport = async () => {
+    toast.loading('Generating report...', { id: 'export' });
+    try {
+      const { data } = await adminApi.getUsers({ limit: 1000 });
+      if (data && (data as any).users) {
+        const csvData = (data as any).users.map((u: any) => ({
+          ID: u.id,
+          Email: u.email,
+          Role: u.role,
+          Name: u.studentProfile?.fullName || u.employerProfile?.companyName || 'N/A',
+          Status: u.isActive ? 'Active' : 'Inactive',
+          Joined: new Date(u.createdAt).toLocaleDateString()
+        }));
+        
+        downloadCSV(csvData, `users_report_${new Date().toISOString().split('T')[0]}.csv`);
+        toast.success('Report downloaded!', { id: 'export' });
+      } else {
+        toast.error('No data to export', { id: 'export' });
+      }
+    } catch (err) {
+      toast.error('Failed to export report', { id: 'export' });
+    }
   };
 
   const handleDateFilter = () => {

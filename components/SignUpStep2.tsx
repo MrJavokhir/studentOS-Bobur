@@ -181,7 +181,7 @@ export default function SignUpStep2({ navigateTo }: NavigationProps) {
                 <span>Your data is secure</span>
               </div>
               <div className="flex gap-4">
-                <a href="#" className="hover:text-primary">Privacy</a>
+                <a href="/privacy" className="hover:text-primary">Privacy</a>
                 <a href="#" className="hover:text-primary">Help</a>
               </div>
             </div>

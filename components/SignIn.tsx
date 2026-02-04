@@ -215,8 +215,8 @@ export default function SignIn({ navigateTo }: NavigationProps) {
         </div>
 
         <div className="mt-8 flex gap-6 text-sm text-slate-500 dark:text-slate-500 opacity-60">
-          <a href="#" className="hover:text-primary transition-colors">Terms</a>
-          <a href="#" className="hover:text-primary transition-colors">Privacy</a>
+          <a href="/terms" className="hover:text-primary transition-colors">Terms</a>
+          <a href="/privacy" className="hover:text-primary transition-colors">Privacy</a>
           <a href="#" className="hover:text-primary transition-colors">Help</a>
         </div>
       </div>

@@ -1,11 +1,25 @@
 
 import React, { useState, useRef } from 'react';
 import { Screen, NavigationProps } from '../types';
+import { aiApi } from '../src/services/api';
+
+interface PlagiarismResult {
+  originalityScore: number;
+  aiScore: number;
+  citationQuality: string;
+  readabilityLevel: string;
+  sourcesFound: number;
+  isOriginal: boolean;
+}
 
 export default function PlagiarismChecker({ navigateTo }: NavigationProps) {
   const [isSidebarLocked, setIsSidebarLocked] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  const [activeTab, setActiveTab] = useState('text'); // text, file, url
+  const [activeTab, setActiveTab] = useState('text');
+  const [textContent, setTextContent] = useState('');
+  const [isChecking, setIsChecking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<PlagiarismResult | null>(null);
   const hoverTimeoutRef = useRef<any>(null);
 
   const handleMouseEnter = () => {
@@ -22,8 +36,30 @@ export default function PlagiarismChecker({ navigateTo }: NavigationProps) {
     }, 320);
   };
 
-  // Sidebar is expanded if locked OR hovered
   const isSidebarExpanded = isSidebarLocked || isSidebarHovered;
+
+  const handleCheck = async () => {
+    if (!textContent.trim()) {
+      setError('Please enter some text to check');
+      return;
+    }
+    
+    setIsChecking(true);
+    setError(null);
+    
+    try {
+      const response = await aiApi.checkPlagiarism(textContent);
+      const data = response.data as PlagiarismResult;
+      setResult(data);
+    } catch (err: any) {
+      console.error('Failed to check plagiarism:', err);
+      setError(err.response?.data?.error || 'Failed to check content. Please try again.');
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  const wordCount = textContent.trim().split(/\s+/).filter(Boolean).length;
 
   return (
     <div className="flex h-screen bg-background-light dark:bg-background-dark text-text-main dark:text-white font-display overflow-hidden relative">
@@ -162,20 +198,35 @@ export default function PlagiarismChecker({ navigateTo }: NavigationProps) {
                 <textarea 
                   className="w-full h-40 bg-transparent border-0 focus:ring-0 resize-none text-text-main dark:text-gray-300 placeholder:text-gray-400 text-sm leading-relaxed p-0 focus:outline-none" 
                   placeholder="Paste your essay, article, or research paper here to check for plagiarism and AI-generated content..."
+                  value={textContent}
+                  onChange={(e) => setTextContent(e.target.value)}
                 ></textarea>
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                   <div className="flex items-center gap-2 text-xs text-text-sub">
                     <span className="material-symbols-outlined text-sm">text_fields</span>
-                    <span>1,240 words</span>
+                    <span>{wordCount} words</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <button className="text-sm font-medium text-text-sub hover:text-primary transition-colors flex items-center gap-1">
                       <span className="material-symbols-outlined text-lg">upload_file</span>
                       Upload File
                     </button>
-                    <button className="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-lg font-medium shadow-lg shadow-primary/20 flex items-center gap-2 transition-all">
-                      <span className="material-symbols-outlined">search_check</span>
-                      Check Content
+                    <button 
+                      onClick={handleCheck}
+                      disabled={isChecking || !textContent.trim()}
+                      className="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-lg font-medium shadow-lg shadow-primary/20 flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isChecking ? (
+                        <>
+                          <span className="material-symbols-outlined animate-spin">sync</span>
+                          Checking...
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined">search_check</span>
+                          Check Content
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -196,8 +247,8 @@ export default function PlagiarismChecker({ navigateTo }: NavigationProps) {
                     <circle className="text-green-500 stroke-current transition-all duration-1000 ease-out" cx="50" cy="50" fill="none" r="40" strokeDasharray="251.2" strokeDashoffset="30" strokeLinecap="round" strokeWidth="8"></circle>
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-4xl font-bold text-text-main dark:text-white">88%</span>
-                    <span className="text-sm font-medium text-green-600 bg-green-100 dark:text-green-300 dark:bg-green-900/30 px-2 py-0.5 rounded mt-1">Passed</span>
+                    <span className="text-4xl font-bold text-text-main dark:text-white">{result?.originalityScore ?? 88}%</span>
+                    <span className={`text-sm font-medium px-2 py-0.5 rounded mt-1 ${(result?.isOriginal ?? true) ? 'text-green-600 bg-green-100 dark:text-green-300 dark:bg-green-900/30' : 'text-red-600 bg-red-100 dark:text-red-300 dark:bg-red-900/30'}`}>{(result?.isOriginal ?? true) ? 'Passed' : 'Review Needed'}</span>
                   </div>
                 </div>
                 <p className="text-sm text-center text-text-sub max-w-[200px] z-10">High originality detected. Minor similarities found in 2 sources.</p>
@@ -210,12 +261,12 @@ export default function PlagiarismChecker({ navigateTo }: NavigationProps) {
                     <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-orange-600 dark:text-orange-400">
                       <span className="material-symbols-outlined">smart_toy</span>
                     </div>
-                    <span className="text-2xl font-bold text-text-main dark:text-white">12%</span>
+                    <span className="text-2xl font-bold text-text-main dark:text-white">{result?.aiScore ?? 12}%</span>
                   </div>
                   <div>
                     <h4 className="font-medium text-text-main dark:text-gray-200 mb-1">Likely AI Content</h4>
                     <div className="w-full bg-gray-100 dark:bg-gray-800 h-2 rounded-full overflow-hidden">
-                      <div className="bg-orange-500 h-full rounded-full" style={{ width: '12%' }}></div>
+                      <div className="bg-orange-500 h-full rounded-full" style={{ width: `${result?.aiScore ?? 12}%` }}></div>
                     </div>
                     <p className="text-xs text-text-sub mt-2">Low probability of AI generation.</p>
                   </div>

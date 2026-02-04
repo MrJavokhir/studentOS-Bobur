@@ -1,9 +1,151 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Screen, NavigationProps } from '../types';
+import { employerApi, jobApi } from '../src/services/api';
+import { downloadCSV } from '../src/utils/csv';
+import { toast } from 'react-hot-toast';
+
+interface EmployerStats {
+  activeJobs: number;
+  totalApplicants: number;
+  newApplications: number;
+  shortlisted: number;
+}
 
 export default function EmployerDashboard({ navigateTo }: NavigationProps) {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'company' | 'settings' | 'jobs'>('dashboard');
+  const [stats, setStats] = useState<EmployerStats | null>(null);
+  const [recentApps, setRecentApps] = useState<any[]>([]);
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [company, setCompany] = useState<any>({
+    companyName: '',
+    industry: 'Software Development',
+    companySize: '11-50 employees',
+    description: '',
+    website: '',
+    location: '',
+    tagline: ''
+  });
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    if (activeTab === 'dashboard') fetchDashboardData();
+    if (activeTab === 'jobs') fetchJobs();
+    if (activeTab === 'students') fetchApplications();
+    if (activeTab === 'company') fetchCompanyProfile();
+  }, [activeTab, statusFilter]);
+
+  const fetchDashboardData = async () => {
+    setIsLoading(true);
+    const [statsRes, appsRes] = await Promise.all([
+      employerApi.getStats(),
+      employerApi.getApplications({ limit: 5 })
+    ]);
+
+    if (statsRes.data) setStats(statsRes.data);
+    if (appsRes.data) setRecentApps((appsRes.data as any).applications);
+    
+    setIsLoading(false);
+  };
+
+  const fetchJobs = async () => {
+    setIsLoading(true);
+    const { data } = await jobApi.getEmployerJobs();
+    if (data) setJobs(data);
+    setIsLoading(false);
+  };
+
+  const fetchApplications = async () => {
+    setIsLoading(true);
+    const filters: any = {};
+    if (statusFilter) filters.status = statusFilter;
+    
+    try {
+      const { data } = await employerApi.getApplications(filters);
+      if (data) setApplications((data as any).applications);
+    } catch (error) {
+      console.error('Failed to fetch applications', error);
+      toast.error('Failed to load applications');
+    }
+    setIsLoading(false);
+  };
+
+  const handleExportApps = async () => {
+    toast.loading('Exporting candidates...', { id: 'export-apps' });
+    try {
+      const { data } = await employerApi.getApplications({ limit: 1000, status: statusFilter });
+      if (data && (data as any).applications) {
+         const csvData = (data as any).applications.map((app: any) => ({
+           Candidate: app.user?.studentProfile?.fullName || 'N/A',
+           Email: app.user?.email || 'N/A',
+           Job: app.job?.title || 'N/A',
+           Status: app.status,
+           Applied: new Date(app.appliedAt).toLocaleDateString(),
+           University: app.user?.studentProfile?.university || '',
+           Major: app.user?.studentProfile?.major || ''
+         }));
+         downloadCSV(csvData, 'candidates_export.csv');
+         toast.success('Export completed', { id: 'export-apps' });
+      }
+    } catch (e) {
+      toast.error('Export failed', { id: 'export-apps' });
+    }
+  };
+
+  const fetchCompanyProfile = async () => {
+    setIsLoading(true);
+    const { data } = await employerApi.getProfile();
+    if (data) setCompany((prev: any) => ({ ...prev, ...(data as any) }));
+    setIsLoading(false);
+  };
+
+  const updateCompanyProfile = async () => {
+    setIsLoading(true);
+    try {
+      await employerApi.updateProfile(company);
+      // alert('Profile updated successfully'); // Temporary feedback
+    } catch (error) {
+      console.error('Failed to update profile', error);
+    }
+    setIsLoading(false);
+  };
+
+  const handleCompanyChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { id, value } = e.target;
+    setCompany((prev: any) => ({ ...prev, [id]: value }));
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ACTIVE': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
+      case 'CLOSED': return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400';
+      case 'PAUSED': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+      default: return 'bg-slate-100 text-slate-700';
+    }
+  };
+
+  const getApplicationStatusFormat = (status: string) => {
+     switch(status) {
+       case 'NEW': return { label: 'New', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' };
+       case 'SCREENING': return { label: 'Screening', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' };
+       case 'INTERVIEW': return { label: 'Interview', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' };
+       case 'OFFER': return { label: 'Offer Sent', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' };
+       case 'REJECTED': return { label: 'Rejected', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' };
+       case 'WITHDRAWN': return { label: 'Withdrawn', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400' };
+       default: return { label: status, color: 'bg-gray-100 text-gray-700' };
+     }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <div className="flex h-screen w-full bg-[#fafafa] dark:bg-background-dark text-text-main dark:text-white font-display overflow-hidden">
@@ -116,7 +258,7 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                     </div>
                   </div>
                   <div>
-                    <p className="mt-4 text-4xl font-black text-slate-900 dark:text-white tracking-tight">12</p>
+                    <p className="mt-4 text-4xl font-black text-slate-900 dark:text-white tracking-tight">{stats?.activeJobs || 0}</p>
                     <div className="mt-2 flex items-center gap-1.5 text-sm">
                       <span className="flex items-center font-bold text-emerald-600 dark:text-emerald-400">
                         <span className="material-symbols-outlined text-[16px] mr-0.5">trending_up</span>
@@ -135,7 +277,7 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                     </div>
                   </div>
                   <div>
-                    <p className="mt-4 text-4xl font-black text-slate-900 dark:text-white tracking-tight">1,208</p>
+                    <p className="mt-4 text-4xl font-black text-slate-900 dark:text-white tracking-tight">{stats?.totalApplicants || 0}</p>
                     <div className="mt-2 flex items-center gap-1.5 text-sm">
                       <span className="flex items-center font-bold text-emerald-600 dark:text-emerald-400">
                         <span className="material-symbols-outlined text-[16px] mr-0.5">trending_up</span>
@@ -155,7 +297,7 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                     </div>
                   </div>
                   <div className="relative z-10">
-                    <p className="mt-4 text-4xl font-black text-slate-900 dark:text-white tracking-tight">36</p>
+                    <p className="mt-4 text-4xl font-black text-slate-900 dark:text-white tracking-tight">{stats?.shortlisted || 0}</p>
                     <div className="mt-2 flex items-center gap-1.5 text-sm">
                       <span className="flex items-center font-bold text-emerald-600 dark:text-emerald-400">
                         <span className="material-symbols-outlined text-[16px] mr-0.5">trending_up</span>
@@ -174,7 +316,7 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                     </div>
                   </div>
                   <div>
-                    <p className="mt-4 text-4xl font-black text-slate-900 dark:text-white tracking-tight">+45</p>
+                    <p className="mt-4 text-4xl font-black text-slate-900 dark:text-white tracking-tight">+{stats?.newApplications || 0}</p>
                     <div className="mt-2 flex items-center gap-2 text-sm">
                       <span className="text-slate-500 dark:text-slate-400 font-medium">Requires review</span>
                       <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
@@ -196,33 +338,33 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                     
                     <div className="flex-1 overflow-y-auto">
                       <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {[
-                          { name: 'Alice Johnson', role: 'Junior Frontend Developer', school: 'University of Toronto', match: 95, time: '2h ago', initials: 'AJ', color: 'bg-purple-100 text-purple-700', matchColor: 'bg-green-100 text-green-800' },
-                          { name: 'Mark Smith', role: 'UX/UI Design Intern', school: 'NYU', match: 88, time: '5h ago', initials: 'MS', color: 'bg-blue-100 text-blue-700', matchColor: 'bg-blue-100 text-blue-800' },
-                          { name: 'Sarah Lee', role: 'Product Manager', school: 'UCLA', match: 76, time: '1d ago', initials: 'SL', color: 'bg-pink-100 text-pink-700', matchColor: 'bg-orange-100 text-orange-800' },
-                          { name: 'David Kim', role: 'Software Engineer', school: 'Stanford', match: 92, time: '1d ago', initials: 'DK', color: 'bg-teal-100 text-teal-700', matchColor: 'bg-green-100 text-green-800' },
-                          { name: 'Emily Chen', role: 'Data Scientist', school: 'MIT', match: 84, time: '2d ago', initials: 'EC', color: 'bg-orange-100 text-orange-700', matchColor: 'bg-blue-100 text-blue-800' },
-                        ].map((applicant, index) => (
-                          <div key={index} className="group flex items-center justify-between p-5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
-                            <div className="flex items-center gap-4">
-                              <div className={`h-12 w-12 rounded-full flex items-center justify-center text-sm font-bold ${applicant.color} border border-white dark:border-slate-700 shadow-sm`}>
-                                {applicant.initials}
+                        {recentApps.length === 0 ? (
+                          <div className="p-8 text-center text-slate-500">No applications yet.</div>
+                        ) : (
+                          recentApps.map((app, index) => (
+                            <div key={index} className="group flex items-center justify-between p-5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
+                              <div className="flex items-center gap-4">
+                                <div className={`h-12 w-12 rounded-full flex items-center justify-center text-sm font-bold bg-primary/10 text-primary border border-white dark:border-slate-700 shadow-sm`}>
+                                  {getInitials(app.user.studentProfile?.fullName || app.user.email)}
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                                    {app.user.studentProfile?.fullName || 'Unknown Candidate'}
+                                  </h4>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                                    {app.job.title} <span className="mx-1 text-slate-300">•</span> {app.user.studentProfile?.university || 'Unknown University'}
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{applicant.name}</h4>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-                                  {applicant.role} <span className="mx-1 text-slate-300">•</span> {applicant.school}
-                                </p>
+                              <div className="flex flex-col items-end gap-1.5">
+                                <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-bold bg-green-100 text-green-800`}>
+                                  Match {app.matchScore || 0}%
+                                </span>
+                                <span className="text-xs font-medium text-slate-400">{new Date(app.appliedAt).toLocaleDateString()}</span>
                               </div>
                             </div>
-                            <div className="flex flex-col items-end gap-1.5">
-                              <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-bold ${applicant.matchColor}`}>
-                                Match {applicant.match}%
-                              </span>
-                              <span className="text-xs font-medium text-slate-400">{applicant.time}</span>
-                            </div>
-                          </div>
-                        ))}
+                          ))
+                        )}
                       </div>
                     </div>
                   </div>
@@ -389,57 +531,53 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                      {[
-                        { title: 'Junior Frontend Developer', type: 'Remote • Full-time', dept: 'Engineering', date: 'Oct 24, 2023', total: 45, extra: 42, status: 'Active', statusColor: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', statusDot: 'bg-emerald-500', icon: 'code', iconColor: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' },
-                        { title: 'UX/UI Design Intern', type: 'New York, NY • Internship', dept: 'Product Design', date: 'Oct 20, 2023', total: 115, extra: 112, status: 'Active', statusColor: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', statusDot: 'bg-emerald-500', icon: 'palette', iconColor: 'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400' },
-                        { title: 'Marketing Specialist', type: 'London, UK • Contract', dept: 'Marketing', date: 'Oct 18, 2023', total: 21, extra: 18, status: 'Paused', statusColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', statusDot: 'bg-amber-500', icon: 'campaign', iconColor: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' },
-                        { title: 'Data Analyst', type: 'Remote • Full-time', dept: 'Data Science', date: 'Sep 15, 2023', total: 92, extra: 88, status: 'Closed', statusColor: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400', statusDot: 'bg-slate-500', icon: 'analytics', iconColor: 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400' },
-                      ].map((job, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-4">
-                              <div className={`w-10 h-10 rounded-lg ${job.iconColor} flex items-center justify-center shrink-0`}>
-                                <span className="material-symbols-outlined text-[20px]">{job.icon}</span>
+                      {jobs.length === 0 ? (
+                        <tr><td colSpan={6} className="text-center p-8 text-slate-500">No jobs posted yet.</td></tr>
+                      ) : (
+                        jobs.map((job) => (
+                          <tr key={job.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-4">
+                                <div className={`w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0`}>
+                                  <span className="material-symbols-outlined text-[20px]">work</span>
+                                </div>
+                                <div>
+                                  <div className="font-bold text-slate-900 dark:text-white text-sm">{job.title}</div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">{job.locationType} • {job.type}</div>
+                                </div>
                               </div>
-                              <div>
-                                <div className="font-bold text-slate-900 dark:text-white text-sm">{job.title}</div>
-                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">{job.type}</div>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-slate-900 dark:text-white">{job.department}</td>
+                            <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">{new Date(job.postedAt).toLocaleDateString()}</td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <div className="flex -space-x-2">
+                                  {[1, 2, 3].slice(0, Math.min(3, job.applicantCount || 0)).map((_, i) => (
+                                    <div key={i} className={`w-6 h-6 rounded-full border-2 border-white dark:border-card-dark bg-slate-200 flex items-center justify-center text-[10px]`}>
+                                      {i + 1}
+                                    </div>
+                                  ))}
+                                </div>
+                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">
+                                  {job.applicantCount || 0}
+                                </span>
                               </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-slate-900 dark:text-white">{job.dept}</td>
-                          <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">{job.date}</td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <div className="flex -space-x-2">
-                                <div className="w-7 h-7 rounded-full bg-slate-300 dark:bg-slate-600 border-2 border-white dark:border-card-dark"></div>
-                                <div className="w-7 h-7 rounded-full bg-slate-400 dark:bg-slate-500 border-2 border-white dark:border-card-dark"></div>
-                                <div className="w-7 h-7 rounded-full bg-slate-500 dark:bg-slate-400 border-2 border-white dark:border-card-dark flex items-center justify-center text-[10px] text-white font-bold">+{job.extra}</div>
-                              </div>
-                              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{job.total} Total</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${job.statusColor}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${job.statusDot}`}></span>
-                              {job.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-2 text-slate-500 dark:text-slate-400">
-                              <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" title="View Applicants">
-                                <span className="material-symbols-outlined text-[20px]">group</span>
+                            </td>
+                            <td className="px-6 py-4">
+                               <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${getStatusColor(job.status)}`}>
+                                 <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${job.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-500'}`}></span>
+                                 {job.status}
+                               </span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button className="text-slate-400 hover:text-primary transition-colors">
+                                <span className="material-symbols-outlined">more_vert</span>
                               </button>
-                              <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" title="Edit">
-                                <span className="material-symbols-outlined text-[20px]">edit</span>
-                              </button>
-                              <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" title="More">
-                                <span className="material-symbols-outlined text-[20px]">more_vert</span>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+
                     </tbody>
                   </table>
                 </div>
@@ -464,7 +602,10 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                   <p className="text-slate-500 dark:text-slate-400">Manage your active candidate pipeline for Junior Frontend Developer.</p>
                 </div>
                 <div className="flex gap-3">
-                  <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-card-dark text-slate-700 dark:text-white rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors font-bold text-sm shadow-sm">
+                  <button 
+                    onClick={handleExportApps}
+                    className="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-card-dark text-slate-700 dark:text-white rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors font-bold text-sm shadow-sm"
+                  >
                     <span className="material-symbols-outlined text-[20px]">download</span>
                     Export List
                   </button>
@@ -489,12 +630,27 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                     </div>
                   </div>
                   <div className="flex overflow-x-auto pb-2 lg:pb-0 gap-1 no-scrollbar w-full lg:w-auto border-b lg:border-none border-slate-200 dark:border-slate-800">
-                    <button className="whitespace-nowrap px-4 py-2 text-primary border-b-2 border-primary font-bold text-sm">All Applicants <span className="ml-1 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">45</span></button>
-                    <button className="whitespace-nowrap px-4 py-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-sm">New <span className="ml-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full text-xs">12</span></button>
-                    <button className="whitespace-nowrap px-4 py-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-sm">Screening <span className="ml-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full text-xs">8</span></button>
-                    <button className="whitespace-nowrap px-4 py-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-sm">Interview <span className="ml-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full text-xs">4</span></button>
-                    <button className="whitespace-nowrap px-4 py-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-sm">Offer <span className="ml-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full text-xs">1</span></button>
+                    {[
+                      { label: 'All Applicants', value: undefined },
+                      { label: 'New', value: 'NEW' },
+                      { label: 'Screening', value: 'SCREENING' },
+                      { label: 'Interview', value: 'INTERVIEW' },
+                      { label: 'Rejected', value: 'REJECTED' }
+                    ].map((filter) => (
+                      <button 
+                        key={filter.label}
+                        onClick={() => setStatusFilter(filter.value)}
+                        className={`whitespace-nowrap px-4 py-2 font-medium text-sm transition-colors ${
+                          statusFilter === filter.value 
+                            ? 'text-primary border-b-2 border-primary font-bold' 
+                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
                   </div>
+
                   <div className="flex gap-2 w-full lg:w-auto">
                     <div className="relative flex-1 lg:w-64">
                       <input className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary placeholder-slate-500 dark:placeholder-slate-400 font-medium" placeholder="Search by name, university..." type="text"/>
@@ -509,147 +665,61 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
 
               {/* Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-                {[
-                  { 
-                    name: "Sarah Chen", 
-                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCVQuPqac2gDtLx9iVWV4rPJXRxfh_i2kwg99XHwGBI4hyUGepnLTPRVPNY7gm9PIX3Zx2RK5UB6HLcS8dPxjbS-Sl3o0HOVPxF2Ce0d46UPPMSDC9ew3cHNECzg-qhMr5HQjnQ2vRhQ-jYRZzwBV6uBRyfHDM551wkk2yX46MsHSSgf6tw5qcGqNa2hL2yQp6FtcwPZdOnLre0kKQ3-a_FoCNun7pc2ELLc_FMzoF4z6qUL6jfckauRp1TsWxAAkjYcat2j7Mlftw", 
-                    time: "Applied 2h ago", 
-                    match: "95% Match", 
-                    matchColor: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-                    school: "Stanford University",
-                    degree: "B.S. Computer Science",
-                    location: "San Francisco, CA",
-                    skills: ["React", "TypeScript", "Figma"],
-                    primaryAction: "Review",
-                    secondaryAction: "close",
-                    tertiaryAction: "favorite_border"
-                  },
-                  { 
-                    name: "Marcus Johnson", 
-                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCXC8GAX_KmKEteb-7sCgY7o6T4_J4Rno6US6PB4qOj5qIRa1ECeTuU9K9Xf18SI_zmvTAFKU1aObqBjff0Qx1XHkWxVHEt6CKTdVYWbnXfcJHABC_RRJeSDayTeP5i2m7YxE5SaiJqhllicvLhwK4DmPIQLE2OkXHkcRd5avjq62dRDxQE6Xe3vwUyePYHxlqq-dqXbnpu4YBwarCV_Pic-M2JZ3wr6Mml3NekGf0PmEWwAoUXgTrSwRAwtTlOexMp91ENPkGS9VQ", 
-                    time: "Applied 1d ago", 
-                    match: "88% Match", 
-                    matchColor: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-                    school: "MIT",
-                    degree: "M.S. Software Engineering",
-                    location: "Boston, MA",
-                    skills: ["Python", "Django", "AWS"],
-                    primaryAction: "Invite to Interview",
-                    secondaryAction: "visibility",
-                    primaryStyle: "outline"
-                  },
-                  { 
-                    name: "Emily Davis", 
-                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCbLa02ZXIxOmHQfEk7QQbx_wWQPs4G8HMyQO5s2E5elEuMzXTtvxvIZYmoGZXDXTvH53foEM5ofOa-ng3zHvx3xYb14NavyntOeMTJhTRVIqKI4usKpP8H-ZoG1KG4NlaftO-XGuoMYshfAigi3UJwxHsk2atojVMbDUqFuFRPdsRN4X7puTzd1Uy_Oh3wRoorFrdXGx00KSstaheutSbXk8M04H8M80KItgcsFHliVhozX85haYtAZTLdBoposvo7jJsTTczvqMQ", 
-                    time: "Applied 2d ago", 
-                    match: "Potential", 
-                    matchColor: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-                    school: "UC Berkeley",
-                    degree: "B.A. Design",
-                    location: "Remote",
-                    skills: ["UI/UX", "Prototyping"],
-                    primaryAction: "Move to Stage 1",
-                    secondaryAction: "more_horiz",
-                  },
-                  { 
-                    name: "David Kim", 
-                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBH38d6uSlROjTMUCrSabiQLg7JNlB1Qo1Fsb3kkfT4IbmC-hJiuIDyxa1iGElUxvQZpyAqzjQQ9jxZCvhIquEDjPxuaBCnA_jQO0iJcEOVY96sH87vi65JPOmkf4bieGO_NnkXzHdULRbOdzQGXX2-Zzqe1WQ7ElqcNv-i2eiDgJmr7pRp7GWzPV1apzNIaEj3W19Z2BRWgKFQ2p8r51bsVMdkQR46momyPzpDdYvGHeaARzZtnJ4xyEop2YtmO9-rxe8xe3plhn0", 
-                    time: "Applied 3d ago", 
-                    match: "New", 
-                    matchColor: "bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-gray-400",
-                    school: "University of Washington",
-                    degree: "B.S. Informatics",
-                    location: "Seattle, WA",
-                    skills: ["Java", "SQL", "Data Analysis"],
-                    primaryAction: "Review",
-                    secondaryAction: "close",
-                    tertiaryAction: "favorite_border"
-                  },
-                  { 
-                    name: "Amanda Lowery", 
-                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBvw8LaZ_ogadPkdN6dPUVCjSxVEzrY9guQ0Hfg5-5pt7ntHaZiOqm3F4JbnSZK0EGdDIY6Hw8MyGsN6V8py0xThB9TxwzYGc_uFKzJEz9k9DEe2LjL8WLptBYFRt7vW_dsrl06V7cbCPFdXJWZ5fZnDxofglIYwpaeiztOCvyXjclefdQYvtBc_Dgo5qd1W4DTMO1cXUV0L_Rvr8kj3Db4JJHO15uuybwyGoaaEsDTi_-S5DTK0080KYnyJ5AgDIFdjgu27H4V0Xw", 
-                    time: "Applied 4d ago", 
-                    match: "Rejected", 
-                    matchColor: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-                    school: "NYU",
-                    degree: "B.A. Communications",
-                    location: "New York, NY",
-                    skills: ["Social Media", "SEO"],
-                    primaryAction: "Reconsider",
-                    secondaryAction: "visibility",
-                    disabled: true,
-                    opacity: true
-                  },
-                  { 
-                    name: "James Wilson", 
-                    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDnDv7H-Go45Z12Kz_efFt16OxHRjGPxW9WgviKtcFDqksNJdYlpQsuoTcY_71Nr7AP-M5XCHKDFSDxDQiAB8zpxqUSAzyqcxE2zgjO9uamYBt_E6jNQW-WzmyV26GnuR-Q678XHlhBq8Z_v6M31aucR_5Dyb30mLnkc5GKuZJfsxnlSo1GMCge_hAjGl4kDk4ZuSqWXpoLn7XjiY_mGcaTyuUzusArHeOJUQrpdoz5QMVCzm7rOE3vnx1RnOSZLSOWp9ZAmvV4V4M", 
-                    time: "Applied 5d ago", 
-                    match: "Stage 2", 
-                    matchColor: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-                    school: "Georgia Tech",
-                    degree: "B.S. Computer Engineering",
-                    location: "Atlanta, GA",
-                    skills: ["C++", "Embedded", "Linux"],
-                    primaryAction: "Schedule Interview",
-                    secondaryAction: "chat_bubble_outline",
-                  }
-                ].map((candidate, idx) => (
-                  <div key={idx} className={`bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow group ${candidate.opacity ? 'opacity-60' : ''}`}>
-                    <div className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <img alt={candidate.name} className="w-12 h-12 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-700" src={candidate.img} />
-                          <div>
-                            <h3 className="font-bold text-slate-900 dark:text-white text-lg">{candidate.name}</h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">{candidate.time}</p>
+                {applications.length === 0 ? (
+                  <div className="col-span-full text-center p-12 text-slate-500 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-slate-800">
+                    No applications received yet.
+                  </div>
+                ) : (
+                  applications.map((app, idx) => {
+                    const statusInfo = getApplicationStatusFormat(app.status);
+                    return (
+                      <div key={app.id || idx} className="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow group">
+                        <div className="p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              {app.user.studentProfile?.avatarUrl ? (
+                                <img alt={app.user.studentProfile.fullName} className="w-12 h-12 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-700" src={app.user.studentProfile.avatarUrl} />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg ring-2 ring-slate-100 dark:ring-slate-700">
+                                  {getInitials(app.user.studentProfile?.fullName || app.user.email)}
+                                </div>
+                              )}
+                              <div>
+                                <h3 className="font-bold text-slate-900 dark:text-white text-lg">{app.user.studentProfile?.fullName || 'Unknown'}</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Applied {new Date(app.appliedAt).toLocaleDateString()}</p>
+                              </div>
+                            </div>
+                            <span className={`${statusInfo.color} text-xs px-2 py-1 rounded-full font-medium`}>{statusInfo.label}</span>
+                          </div>
+                          <div className="space-y-3 mb-6">
+                            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                              <span className="material-symbols-outlined text-[18px]">work</span>
+                              <span>{app.job.title}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                              <span className="material-symbols-outlined text-[18px]">school</span>
+                              <span>{app.user.studentProfile?.university || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                              <span className="material-symbols-outlined text-[18px]">location_on</span>
+                              <span>{app.user.studentProfile?.country || 'Remote'}</span>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 mb-6">
+                            {(app.user.studentProfile?.skills || []).slice(0, 3).map((skill: string, i: number) => (
+                              <span key={i} className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs rounded-md font-medium">{skill}</span>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                             <button className="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors bg-primary text-white hover:bg-primary-dark shadow-sm">
+                               Review Application
+                             </button>
                           </div>
                         </div>
-                        <span className={`${candidate.matchColor} text-xs px-2 py-1 rounded-full font-medium`}>{candidate.match}</span>
                       </div>
-                      <div className="space-y-3 mb-6">
-                        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                          <span className="material-symbols-outlined text-[18px]">school</span>
-                          <span>{candidate.school}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                          <span className="material-symbols-outlined text-[18px]">menu_book</span>
-                          <span>{candidate.degree}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                          <span className="material-symbols-outlined text-[18px]">location_on</span>
-                          <span>{candidate.location}</span>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mb-6">
-                        {candidate.skills.map((skill, i) => (
-                          <span key={i} className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs rounded-md font-medium">{skill}</span>
-                        ))}
-                      </div>
-                      <div className="flex gap-2">
-                        <button 
-                          className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                            candidate.disabled 
-                              ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed' 
-                              : candidate.primaryStyle === 'outline'
-                                ? 'bg-white dark:bg-card-dark border border-primary text-primary hover:bg-blue-50 dark:hover:bg-blue-900/20'
-                                : 'bg-primary text-white hover:bg-primary-dark'
-                          }`}
-                          disabled={candidate.disabled}
-                        >
-                          {candidate.primaryAction}
-                        </button>
-                        <button className="p-2 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" title="View Profile">
-                          <span className="material-symbols-outlined text-[20px]">{candidate.secondaryAction}</span>
-                        </button>
-                        {candidate.tertiaryAction && (
-                          <button className="p-2 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" title="Action">
-                            <span className="material-symbols-outlined text-[20px]">{candidate.tertiaryAction}</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })
+                )}
               </div>
 
               {/* Pagination */}
@@ -678,9 +748,13 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                     <span className="material-symbols-outlined text-[18px]">visibility</span>
                     View Public Profile
                   </button>
-                  <button className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-primary/30">
+                  <button 
+                    onClick={updateCompanyProfile}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-primary/30 disabled:opacity-50"
+                  >
                     <span className="material-symbols-outlined text-[18px]">save</span>
-                    Save Changes
+                    {isLoading ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               </div>
@@ -706,18 +780,37 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                         <div className="flex-grow space-y-4">
                           <div>
                             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1" htmlFor="companyName">Company Name</label>
-                            <input className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5" id="companyName" type="text" defaultValue="TechFlow Inc." />
+                            <input 
+                              className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5" 
+                              id="companyName" 
+                              type="text" 
+                              value={company.companyName || ''}
+                              onChange={handleCompanyChange}
+                              placeholder="TechFlow Inc." 
+                            />
                           </div>
                           <div>
                             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1" htmlFor="tagline">Tagline</label>
-                            <input className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5" id="tagline" placeholder="e.g. Innovating the future of tech" type="text" />
+                            <input 
+                              className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5" 
+                              id="tagline" 
+                              type="text"
+                              value={company.tagline || ''}
+                              onChange={handleCompanyChange}
+                              placeholder="e.g. Innovating the future of tech" 
+                            />
                           </div>
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1" htmlFor="industry">Industry</label>
-                          <select className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5">
+                          <select 
+                            className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5"
+                            id="industry"
+                            value={company.industry || 'Software Development'}
+                            onChange={handleCompanyChange}
+                          >
                             <option>Software Development</option>
                             <option>Fintech</option>
                             <option>Healthcare</option>
@@ -725,10 +818,15 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1" htmlFor="size">Company Size</label>
-                          <select className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5">
+                          <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1" htmlFor="companySize">Company Size</label>
+                          <select 
+                            className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5"
+                            id="companySize"
+                            value={company.companySize || '11-50 employees'}
+                            onChange={handleCompanyChange}
+                          >
                             <option>1-10 employees</option>
-                            <option selected>11-50 employees</option>
+                            <option>11-50 employees</option>
                             <option>51-200 employees</option>
                             <option>201-500 employees</option>
                             <option>500+ employees</option>
@@ -748,7 +846,13 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                         Write a compelling description of your company culture, mission, and what makes it a great place to work. This helps attract the right candidates.
                       </p>
                       <div className="relative">
-                        <textarea className="block w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-3 min-h-[160px]" id="about" placeholder="Tell us about your company..."></textarea>
+                        <textarea 
+                          className="block w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-3 min-h-[160px]" 
+                          id="description" 
+                          value={company.description || ''}
+                          onChange={handleCompanyChange}
+                          placeholder="Tell us about your company..."
+                        ></textarea>
                         <div className="absolute bottom-3 right-3 text-xs text-slate-400">
                           0 / 2000
                         </div>
@@ -770,8 +874,15 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1" htmlFor="city">City</label>
-                          <input className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5" id="city" placeholder="San Francisco" type="text" />
+                          <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1" htmlFor="location">City / Location</label>
+                          <input 
+                            className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5" 
+                            id="location" 
+                            value={company.location || ''}
+                            onChange={handleCompanyChange}
+                            placeholder="San Francisco" 
+                            type="text" 
+                          />
                         </div>
                         <div>
                           <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1" htmlFor="state">State/Region</label>
@@ -802,7 +913,14 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                             <span className="material-symbols-outlined text-slate-400 text-[18px]">language</span>
                           </div>
-                          <input className="block w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 pl-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5" id="website" placeholder="https://www.company.com" type="text" />
+                          <input 
+                            className="block w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 pl-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5" 
+                            id="website" 
+                            value={company.website || ''}
+                            onChange={handleCompanyChange}
+                            type="text"
+                            placeholder="https://www.company.com" 
+                          />
                         </div>
                       </div>
                       <div>

@@ -171,6 +171,11 @@ export const jobApi = {
   unsave: (id: string) => api.delete(`/jobs/${id}/save`),
   getSaved: () => api.get('/jobs/saved/list'),
   getApplications: () => api.get('/jobs/applications/list'),
+  // Employer methods
+  getEmployerJobs: () => api.get<any[]>('/jobs/employer/list'),
+  updateJob: (id: string, data: any) => api.patch(`/jobs/${id}`, data),
+  deleteJob: (id: string) => api.delete(`/jobs/${id}`),
+  createJob: (data: any) => api.post('/jobs', data),
 };
 
 // Habits API
@@ -227,7 +232,7 @@ export const aiApi = {
 // Admin API
 export const adminApi = {
   getStats: () => api.get('/admin/stats'),
-  getUsers: (params?: { role?: string; search?: string; page?: number }) => {
+  getUsers: (params?: { role?: string; search?: string; page?: number; limit?: number }) => {
     const searchParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -263,4 +268,20 @@ export const notificationApi = {
   markRead: (id: string) => api.patch(`/notifications/${id}/read`, {}),
   markAllRead: () => api.patch('/notifications/read-all', {}),
   create: (data: any) => api.post('/notifications', data), // For testing
+};
+
+// Employer API
+export const employerApi = {
+  getProfile: () => api.get('/employer/me'),
+  updateProfile: (data: any) => api.patch('/employer/me', data),
+  getStats: () => api.get<{ activeJobs: number; totalApplicants: number; newApplications: number; shortlisted: number }>('/employer/stats'),
+  getApplications: (params?: { page?: number; limit?: number; status?: string; search?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) searchParams.append(key, String(value));
+      });
+    }
+    return api.get(`/employer/applications?${searchParams}`);
+  },
 };
