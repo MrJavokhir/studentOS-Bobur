@@ -12,8 +12,9 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Set API URL for production build
-ENV VITE_API_URL=https://studentos.up.railway.app/api
+# Set API URL -> allows passing at build time
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 
 # Build the app
 RUN npm run build
