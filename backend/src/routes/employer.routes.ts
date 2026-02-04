@@ -153,7 +153,6 @@ router.get('/applications', async (req: AuthenticatedRequest, res, next) => {
                   country: true,
                   graduationYear: true,
                   skills: true,
-                  location: true, // Assuming location exists in profile? Check scheme later.
                 },
               },
             },
