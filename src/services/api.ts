@@ -265,6 +265,7 @@ export const aiApi = {
 // Admin API
 export const adminApi = {
   getStats: () => api.get('/admin/stats'),
+  getAnalytics: () => api.get('/admin/analytics'),
   getUsers: (params?: { role?: string; search?: string; page?: number; limit?: number }) => {
     const searchParams = new URLSearchParams();
     if (params) {

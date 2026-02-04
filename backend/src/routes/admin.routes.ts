@@ -66,6 +66,92 @@ router.get('/stats', async (req: AuthenticatedRequest, res, next) => {
   }
 });
 
+// Enhanced analytics for charts
+router.get('/analytics', async (req: AuthenticatedRequest, res, next) => {
+  try {
+    // Get daily user signups for the last 7 days
+    const userGrowth = [];
+    for (let i = 6; i >= 0; i--) {
+      const dayStart = new Date();
+      dayStart.setDate(dayStart.getDate() - i);
+      dayStart.setHours(0, 0, 0, 0);
+      
+      const dayEnd = new Date(dayStart);
+      dayEnd.setHours(23, 59, 59, 999);
+      
+      const count = await prisma.user.count({
+        where: {
+          createdAt: {
+            gte: dayStart,
+            lte: dayEnd,
+          },
+        },
+      });
+      
+      userGrowth.push({
+        date: dayStart.toISOString().split('T')[0],
+        day: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayStart.getDay()],
+        count,
+      });
+    }
+
+    // User distribution by role
+    const usersByRole = await prisma.user.groupBy({
+      by: ['role'],
+      _count: true,
+    });
+
+    // Get totals for trend comparison
+    const totalApplications = await prisma.jobApplication.count();
+    const totalScholarshipSaves = await prisma.savedScholarship.count();
+    const totalHabitsLogged = await prisma.habitLog.count();
+    const totalCommunityPosts = await prisma.communityPost.count();
+
+    // Get top 5 scholarships (most recently added)
+    const recentScholarships = await prisma.scholarship.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        institution: true,
+        country: true,
+      },
+    });
+
+    // Get top 5 jobs (most recently added)
+    const recentJobs = await prisma.job.findMany({
+      take: 5,
+      orderBy: { id: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        department: true,
+        locationType: true,
+      },
+    });
+
+    res.json({
+      userGrowth,
+      usersByRole: usersByRole.map(r => ({
+        role: r.role,
+        count: r._count,
+      })),
+      engagement: {
+        applications: totalApplications,
+        scholarshipSaves: totalScholarshipSaves,
+        habitsLogged: totalHabitsLogged,
+        communityPosts: totalCommunityPosts,
+      },
+      recentScholarships,
+      recentJobs,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
 // User management
 router.get('/users', async (req: AuthenticatedRequest, res, next) => {
   try {
