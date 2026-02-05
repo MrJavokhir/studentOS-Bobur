@@ -6,8 +6,18 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
+  // Use environment variables for passwords (required for security)
+  const adminPasswordRaw = process.env.ADMIN_PASSWORD;
+  const employerPasswordRaw = process.env.EMPLOYER_PASSWORD;
+
+  if (!adminPasswordRaw || !employerPasswordRaw) {
+    console.error('❌ ADMIN_PASSWORD and EMPLOYER_PASSWORD environment variables are required');
+    console.error('   Set these in your .env file or Railway environment variables');
+    process.exit(1);
+  }
+
   // Create admin user
-  const adminPassword = await bcrypt.hash('admin123', 12);
+  const adminPassword = await bcrypt.hash(adminPasswordRaw, 12);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@studentos.com' },
     update: {},
@@ -27,7 +37,7 @@ async function main() {
   console.log('✅ Admin user created:', admin.email);
 
   // Create sample employers
-  const employerPassword = await bcrypt.hash('employer123', 12);
+  const employerPassword = await bcrypt.hash(employerPasswordRaw, 12);
   
   const employer1 = await prisma.user.upsert({
     where: { email: 'hr@techflow.com' },
@@ -435,10 +445,8 @@ Celebrate small wins. This positive reinforcement makes habits more likely to st
   console.log('✅ Pricing plans created (4 plans)');
 
   console.log('🎉 Database seeded successfully!');
-  console.log('\n📋 Test credentials:');
-  console.log('   Admin: admin@studentos.com / admin123');
-  console.log('   Employer 1: hr@techflow.com / employer123');
-  console.log('   Employer 2: careers@innovatehub.io / employer123');
+  console.log('\n📋 Admin/Employer credentials are set via environment variables');
+  console.log('   ADMIN_PASSWORD and EMPLOYER_PASSWORD');
   console.log('\n📊 Data created:');
   console.log('   - 6 Jobs');
   console.log('   - 10 Scholarships');
