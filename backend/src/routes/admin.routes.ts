@@ -1,12 +1,38 @@
-import { Router } from 'express';
+import { Router, Request } from 'express';
 import { z } from 'zod';
 import prisma from '../config/database.js';
 import { authenticate, AuthenticatedRequest } from '../middleware/auth.middleware.js';
 import { requireAdmin } from '../middleware/role.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
 import { hashPassword } from '../services/auth.service.js';
+import { AppError } from '../middleware/error.middleware.js';
 
 const router = Router();
+
+// Helper function to log admin actions
+const logAdminAction = async (
+  req: AuthenticatedRequest,
+  action: string,
+  targetType: string,
+  targetId: string | null,
+  details?: Record<string, any>
+) => {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        adminId: req.user!.id,
+        action,
+        targetType,
+        targetId,
+        details: details ? JSON.stringify(details) : null,
+        ipAddress: req.ip || req.socket.remoteAddress || null,
+        userAgent: req.get('User-Agent') || null,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to log admin action:', error);
+  }
+};
 
 // Validation schemas
 const createUserSchema = z.object({
@@ -75,10 +101,10 @@ router.get('/analytics', async (req: AuthenticatedRequest, res, next) => {
       const dayStart = new Date();
       dayStart.setDate(dayStart.getDate() - i);
       dayStart.setHours(0, 0, 0, 0);
-      
+
       const dayEnd = new Date(dayStart);
       dayEnd.setHours(23, 59, 59, 999);
-      
+
       const count = await prisma.user.count({
         where: {
           createdAt: {
@@ -87,7 +113,7 @@ router.get('/analytics', async (req: AuthenticatedRequest, res, next) => {
           },
         },
       });
-      
+
       userGrowth.push({
         date: dayStart.toISOString().split('T')[0],
         day: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayStart.getDay()],
@@ -217,21 +243,38 @@ router.post('/users', validate(createUserSchema), async (req: AuthenticatedReque
       },
     });
 
+    // Audit log
+    await logAdminAction(req, 'CREATE_USER', 'USER', user.id, { email, role });
+
     res.status(201).json({ id: user.id, email: user.email, role: user.role });
   } catch (error) {
     next(error);
   }
 });
 
-// Update user
+// Update user - with self-escalation prevention
 router.patch('/users/:id', async (req: AuthenticatedRequest, res, next) => {
   try {
     const { isActive, role } = req.body;
+    const targetUserId = req.params.id as string;
+
+    // Prevent admins from modifying their own role or deactivating themselves
+    if (targetUserId === req.user!.id) {
+      if (role !== undefined) {
+        throw new AppError(403, 'You cannot modify your own role');
+      }
+      if (isActive === false) {
+        throw new AppError(403, 'You cannot deactivate your own account');
+      }
+    }
 
     const user = await prisma.user.update({
-      where: { id: req.params.id as string },
+      where: { id: targetUserId },
       data: { isActive, role },
     });
+
+    // Audit log
+    await logAdminAction(req, 'UPDATE_USER', 'USER', targetUserId, { isActive, role });
 
     res.json(user);
   } catch (error) {
@@ -239,10 +282,27 @@ router.patch('/users/:id', async (req: AuthenticatedRequest, res, next) => {
   }
 });
 
-// Delete user
+// Delete user - prevent self-deletion
 router.delete('/users/:id', async (req: AuthenticatedRequest, res, next) => {
   try {
-    await prisma.user.delete({ where: { id: req.params.id as string } });
+    const targetUserId = req.params.id as string;
+
+    // Prevent admins from deleting themselves
+    if (targetUserId === req.user!.id) {
+      throw new AppError(403, 'You cannot delete your own account');
+    }
+
+    // Get user info for audit before deletion
+    const userToDelete = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { email: true, role: true },
+    });
+
+    await prisma.user.delete({ where: { id: targetUserId } });
+
+    // Audit log
+    await logAdminAction(req, 'DELETE_USER', 'USER', targetUserId, userToDelete ?? undefined);
+
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -309,13 +369,31 @@ router.delete('/pricing/:id', async (req: AuthenticatedRequest, res, next) => {
   }
 });
 
-// Contact messages
+// Contact messages - with pagination
 router.get('/messages', async (req: AuthenticatedRequest, res, next) => {
   try {
-    const messages = await prisma.contactMessage.findMany({
-      orderBy: { createdAt: 'desc' },
+    const { page = '1', limit = '50' } = req.query as any;
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Max 100 per page
+
+    const [messages, total] = await Promise.all([
+      prisma.contactMessage.findMany({
+        orderBy: { createdAt: 'desc' },
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
+      }),
+      prisma.contactMessage.count(),
+    ]);
+
+    res.json({
+      messages,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
     });
-    res.json(messages);
   } catch (error) {
     next(error);
   }
@@ -328,6 +406,41 @@ router.patch('/messages/:id', async (req: AuthenticatedRequest, res, next) => {
       data: { isRead: true },
     });
     res.json(message);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Audit logs - view admin actions for accountability
+router.get('/audit-logs', async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { page = '1', limit = '50', action, adminId } = req.query as any;
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+
+    const where: any = {};
+    if (action) where.action = action;
+    if (adminId) where.adminId = adminId;
+
+    const [logs, total] = await Promise.all([
+      prisma.auditLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
+      }),
+      prisma.auditLog.count({ where }),
+    ]);
+
+    res.json({
+      logs,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
+    });
   } catch (error) {
     next(error);
   }

@@ -13,8 +13,18 @@ import {
   revokeAllUserTokens,
 } from '../services/auth.service.js';
 import { AppError } from '../middleware/error.middleware.js';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
+
+// Strict login rate limiter - 5 attempts per 15 minutes per IP
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts
+  message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Validation schemas
 const registerSchema = z.object({
@@ -104,8 +114,8 @@ router.post('/register', validate(registerSchema), async (req, res, next) => {
   }
 });
 
-// Login
-router.post('/login', validate(loginSchema), async (req, res, next) => {
+// Login - with brute force protection
+router.post('/login', loginLimiter, validate(loginSchema), async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -121,6 +131,16 @@ router.post('/login', validate(loginSchema), async (req, res, next) => {
     if (!user || !user.passwordHash) {
       throw new AppError(401, 'Invalid credentials');
     }
+
+    // Check if user is active
+    if (!user.isActive) {
+      throw new AppError(403, 'Your account has been deactivated. Please contact support.');
+    }
+
+    // Check email verification (optional enforcement - uncomment to enforce)
+    // if (!user.emailVerified) {
+    //   throw new AppError(401, 'Please verify your email before logging in.');
+    // }
 
     // Verify password
     const isValid = await comparePasswords(password, user.passwordHash);

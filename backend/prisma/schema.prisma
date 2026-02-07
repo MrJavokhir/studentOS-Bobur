@@ -530,3 +530,24 @@ model Notification {
   @@index([userId])
   @@index([isRead])
 }
+
+// =============================================================================
+// AUDIT LOGS (Admin Accountability)
+// =============================================================================
+
+model AuditLog {
+  id         String  @id @default(cuid())
+  adminId    String
+  action     String // CREATE_USER, UPDATE_USER, DELETE_USER, UPDATE_ROLE, etc.
+  targetType String // USER, SCHOLARSHIP, JOB, PRICING_PLAN, etc.
+  targetId   String?
+  details    String? // JSON string with additional context
+  ipAddress  String?
+  userAgent  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([createdAt])
+}
