@@ -1,4 +1,4 @@
-import { Router, Response } from 'express';
+import { Router, Response, Request } from 'express';
 import { z } from 'zod';
 import prisma from '../config/database.js';
 import { validate } from '../middleware/validate.middleware.js';
@@ -13,7 +13,7 @@ import {
   revokeAllUserTokens,
 } from '../services/auth.service.js';
 import { AppError } from '../middleware/error.middleware.js';
-import rateLimit from 'express-rate-limit';
+import { loginRateLimiter, resetLoginAttempts } from '../services/rate-limiter.js';
 
 const router = Router();
 
@@ -43,15 +43,6 @@ const clearAuthCookies = (res: Response) => {
   res.clearCookie('accessToken', cookieOptions);
   res.clearCookie('refreshToken', cookieOptions);
 };
-
-// Strict login rate limiter - 5 attempts per 15 minutes per IP
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts
-  message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 // Validation schemas
 const registerSchema = z.object({
@@ -142,7 +133,7 @@ router.post('/register', validate(registerSchema), async (req, res, next) => {
 });
 
 // Login - with brute force protection
-router.post('/login', loginLimiter, validate(loginSchema), async (req, res, next) => {
+router.post('/login', loginRateLimiter, validate(loginSchema), async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
