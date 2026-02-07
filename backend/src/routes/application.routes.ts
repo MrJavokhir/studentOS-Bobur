@@ -94,6 +94,8 @@ router.patch('/:id/status', authenticate, requireEmployer, async (req: Authentic
 router.get('/job/:jobId', authenticate, requireEmployer, async (req: AuthenticatedRequest, res, next) => {
   try {
     const { status, page = '1', limit = '20' } = req.query as any;
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Max 100 per page
 
     const where: any = { jobId: req.params.jobId as string };
     if (status) where.status = status;
@@ -118,8 +120,8 @@ router.get('/job/:jobId', authenticate, requireEmployer, async (req: Authenticat
           },
         },
         orderBy: { appliedAt: 'desc' },
-        skip: (parseInt(page) - 1) * parseInt(limit),
-        take: parseInt(limit),
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
       }),
       prisma.jobApplication.count({ where }),
     ]);
@@ -127,10 +129,10 @@ router.get('/job/:jobId', authenticate, requireEmployer, async (req: Authenticat
     res.json({
       applications,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: pageNum,
+        limit: limitNum,
         total,
-        pages: Math.ceil(total / parseInt(limit)),
+        pages: Math.ceil(total / limitNum),
       },
     });
   } catch (error) {

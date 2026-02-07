@@ -28,9 +28,11 @@ router.get('/', authenticate, async (req: AuthenticatedRequest, res, next) => {
             },
           },
           orderBy: { completedAt: 'desc' },
+          take: 60, // Max 60 logs (about 2 per day for 30 days)
         },
       },
       orderBy: { createdAt: 'asc' },
+      take: 50, // Max 50 habits per user
     });
 
     res.json(habits.map((h) => ({

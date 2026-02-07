@@ -24,6 +24,8 @@ const querySchema = z.object({
 router.get('/admin/list', authenticate, requireAdmin, async (req: AuthenticatedRequest, res, next) => {
   try {
     const { search, status, page = '1', limit = '50' } = req.query as any;
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Max 100 per page
 
     const where: any = {};
 
@@ -43,8 +45,8 @@ router.get('/admin/list', authenticate, requireAdmin, async (req: AuthenticatedR
       prisma.scholarship.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        skip: (parseInt(page) - 1) * parseInt(limit),
-        take: parseInt(limit),
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
       }),
       prisma.scholarship.count({ where }),
     ]);
@@ -52,10 +54,10 @@ router.get('/admin/list', authenticate, requireAdmin, async (req: AuthenticatedR
     res.json({
       scholarships,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: pageNum,
+        limit: limitNum,
         total,
-        pages: Math.ceil(total / parseInt(limit)),
+        pages: Math.ceil(total / limitNum),
       },
     });
   } catch (error) {
@@ -106,6 +108,8 @@ router.get('/admin/stats', authenticate, requireAdmin, async (req: Authenticated
 router.get('/', optionalAuth, mediumCache, validate(querySchema), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { country, studyLevel, minAmount, search, page = '1', limit = '10' } = req.query as any;
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit))); // Max 50 per page for public
 
     const where: any = {
       isActive: true,
@@ -125,8 +129,8 @@ router.get('/', optionalAuth, mediumCache, validate(querySchema), async (req: Au
       prisma.scholarship.findMany({
         where,
         orderBy: { deadline: 'asc' },
-        skip: (parseInt(page) - 1) * parseInt(limit),
-        take: parseInt(limit),
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
       }),
       prisma.scholarship.count({ where }),
     ]);
@@ -147,10 +151,10 @@ router.get('/', optionalAuth, mediumCache, validate(querySchema), async (req: Au
         isSaved: savedIds.includes(s.id),
       })),
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: pageNum,
+        limit: limitNum,
         total,
-        pages: Math.ceil(total / parseInt(limit)),
+        pages: Math.ceil(total / limitNum),
       },
     });
   } catch (error) {
