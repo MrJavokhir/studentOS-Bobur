@@ -136,11 +136,27 @@ export const api = new ApiClient(API_URL);
 
 // Auth API
 export const authApi = {
-  register: (data: { email: string; password: string; fullName: string }) =>
-    api.post<{ user: any; accessToken: string; refreshToken: string }>('/auth/register', data),
+  register: async (data: { email: string; password: string; fullName: string }) => {
+    console.log('[Auth] Attempting registration for:', data.email);
+    const result = await api.post<{ user: any; accessToken: string; refreshToken: string }>('/auth/register', data);
+    if (result.error) {
+      console.error('[Auth] Registration failed:', result.error);
+    } else {
+      console.log('[Auth] Registration successful:', result.data?.user?.email);
+    }
+    return result;
+  },
 
-  login: (data: { email: string; password: string }) =>
-    api.post<{ user: any; accessToken: string; refreshToken: string }>('/auth/login', data),
+  login: async (data: { email: string; password: string }) => {
+    console.log('[Auth] Attempting login for:', data.email);
+    const result = await api.post<{ user: any; accessToken: string; refreshToken: string }>('/auth/login', data);
+    if (result.error) {
+      console.error('[Auth] Login failed:', result.error);
+    } else {
+      console.log('[Auth] Login successful:', result.data?.user?.email, 'Role:', result.data?.user?.role);
+    }
+    return result;
+  },
 
   logout: (refreshToken: string) =>
     api.post('/auth/logout', { refreshToken }),
