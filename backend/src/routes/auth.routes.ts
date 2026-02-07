@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { z } from 'zod';
 import prisma from '../config/database.js';
 import { validate } from '../middleware/validate.middleware.js';
@@ -16,6 +16,33 @@ import { AppError } from '../middleware/error.middleware.js';
 import rateLimit from 'express-rate-limit';
 
 const router = Router();
+
+// Cookie options for secure token storage
+const isProduction = process.env.NODE_ENV === 'production';
+const cookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? 'strict' as const : 'lax' as const,
+  path: '/',
+};
+
+// Helper to set auth cookies
+const setAuthCookies = (res: Response, accessToken: string, refreshToken: string) => {
+  res.cookie('accessToken', accessToken, {
+    ...cookieOptions,
+    maxAge: 15 * 60 * 1000, // 15 minutes
+  });
+  res.cookie('refreshToken', refreshToken, {
+    ...cookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+};
+
+// Helper to clear auth cookies
+const clearAuthCookies = (res: Response) => {
+  res.clearCookie('accessToken', cookieOptions);
+  res.clearCookie('refreshToken', cookieOptions);
+};
 
 // Strict login rate limiter - 5 attempts per 15 minutes per IP
 const loginLimiter = rateLimit({
@@ -162,6 +189,10 @@ router.post('/login', loginLimiter, validate(loginSchema), async (req, res, next
     });
     const refreshToken = await generateRefreshToken(user.id);
 
+    // Set httpOnly cookies for secure token storage
+    setAuthCookies(res, accessToken, refreshToken);
+
+    // Also return tokens in response for backward compatibility
     res.json({
       user: {
         id: user.id,
@@ -180,7 +211,8 @@ router.post('/login', loginLimiter, validate(loginSchema), async (req, res, next
 // Refresh token
 router.post('/refresh', async (req, res, next) => {
   try {
-    const { refreshToken } = req.body;
+    // Try body first, then cookie
+    const refreshToken = req.body.refreshToken || req.cookies?.refreshToken;
 
     if (!refreshToken) {
       throw new AppError(400, 'Refresh token required');
@@ -211,6 +243,9 @@ router.post('/refresh', async (req, res, next) => {
     });
     const newRefreshToken = await generateRefreshToken(user.id);
 
+    // Set httpOnly cookies
+    setAuthCookies(res, accessToken, newRefreshToken);
+
     res.json({
       accessToken,
       refreshToken: newRefreshToken,
@@ -223,11 +258,15 @@ router.post('/refresh', async (req, res, next) => {
 // Logout
 router.post('/logout', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { refreshToken } = req.body;
+    // Try body first, then cookie
+    const refreshToken = req.body.refreshToken || req.cookies?.refreshToken;
 
     if (refreshToken) {
       await revokeRefreshToken(refreshToken);
     }
+
+    // Clear httpOnly cookies
+    clearAuthCookies(res);
 
     res.json({ message: 'Logged out successfully' });
   } catch (error) {

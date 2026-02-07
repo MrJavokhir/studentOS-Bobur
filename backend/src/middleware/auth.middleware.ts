@@ -18,15 +18,21 @@ export const authenticate = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Check Authorization header first, then cookies
     const authHeader = req.headers.authorization;
-    
-    if (!authHeader?.startsWith('Bearer ')) {
+    let token: string | undefined;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else if (req.cookies?.accessToken) {
+      token = req.cookies.accessToken;
+    }
+
+    if (!token) {
       res.status(401).json({ error: 'No token provided' });
       return;
     }
 
-    const token = authHeader.substring(7);
-    
     const decoded = jwt.verify(token, env.JWT_SECRET) as {
       userId: string;
       email: string;
@@ -69,15 +75,21 @@ export const optionalAuth = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Check Authorization header first, then cookies
     const authHeader = req.headers.authorization;
-    
-    if (!authHeader?.startsWith('Bearer ')) {
+    let token: string | undefined;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else if (req.cookies?.accessToken) {
+      token = req.cookies.accessToken;
+    }
+
+    if (!token) {
       next();
       return;
     }
 
-    const token = authHeader.substring(7);
-    
     const decoded = jwt.verify(token, env.JWT_SECRET) as {
       userId: string;
       email: string;
