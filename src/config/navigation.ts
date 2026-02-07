@@ -1,4 +1,4 @@
-import { Screen } from '../types';
+import { Screen } from '../../types';
 
 /**
  * Single source of truth for student dashboard navigation items.
