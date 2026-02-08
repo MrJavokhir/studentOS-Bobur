@@ -1,14 +1,130 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Screen, NavigationProps } from '../types';
 import { useAuth } from '../src/contexts/AuthContext';
+import { adminApi } from '../src/services/api';
 import toast from 'react-hot-toast';
 
-export default function AdminRoles({ navigateTo }: NavigationProps) {
+// Types
+interface Permission {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  description?: string;
+}
+
+interface Role {
+  id: string;
+  name: string;
+  description?: string;
+  isSystem: boolean;
+  userCount: number;
+  permissions: Permission[];
+}
+
+interface AdminUser {
+  id: string;
+  email: string;
+  fullName: string;
+  avatarUrl?: string;
+  isActive: boolean;
+  lastLoginAt?: string;
+  roles: { id: string; name: string }[];
+}
+
+function AdminRoles({ navigateTo }: NavigationProps) {
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { logout } = useAuth();
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Data states
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [groupedPermissions, setGroupedPermissions] = useState<Record<string, Permission[]>>({});
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+  const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 0 });
+
+  // UI states
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Modals
+  const [showCreateRoleModal, setShowCreateRoleModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [showAuditLogModal, setShowAuditLogModal] = useState(false);
+  const [showEditRoleNameModal, setShowEditRoleNameModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+
+  // Form states
+  const [newRoleName, setNewRoleName] = useState('');
+  const [newRoleDescription, setNewRoleDescription] = useState('');
+  const [editRoleName, setEditRoleName] = useState('');
+  const [editRoleDescription, setEditRoleDescription] = useState('');
+
+  // Get selected role
+  const selectedRole = useMemo(
+    () => roles.find((r) => r.id === selectedRoleId),
+    [roles, selectedRoleId]
+  );
+
+  // Filter users by search
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery) return adminUsers;
+    const q = searchQuery.toLowerCase();
+    return adminUsers.filter(
+      (u) => u.email.toLowerCase().includes(q) || u.fullName.toLowerCase().includes(q)
+    );
+  }, [adminUsers, searchQuery]);
+
+  // Fetch initial data
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Update selected permissions when role changes
+  useEffect(() => {
+    if (selectedRole) {
+      setSelectedPermissionIds(new Set(selectedRole.permissions.map((p) => p.id)));
+      setEditRoleName(selectedRole.name);
+      setEditRoleDescription(selectedRole.description || '');
+    }
+  }, [selectedRole]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [rolesRes, permsRes, usersRes] = await Promise.all([
+        adminApi.getRoles(),
+        adminApi.getPermissions(),
+        adminApi.getAdminUsers({ limit: 100 }),
+      ]);
+
+      if (rolesRes.data) {
+        setRoles(rolesRes.data);
+        if (rolesRes.data.length > 0 && !selectedRoleId) {
+          setSelectedRoleId(rolesRes.data[0].id);
+        }
+      }
+      if (permsRes.data) {
+        setPermissions(permsRes.data.permissions);
+        setGroupedPermissions(permsRes.data.grouped);
+      }
+      if (usersRes.data) {
+        setAdminUsers(usersRes.data.users);
+        setPagination(usersRes.data.pagination);
+      }
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+      toast.error('Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -22,396 +138,716 @@ export default function AdminRoles({ navigateTo }: NavigationProps) {
       setIsLoggingOut(false);
     }
   };
-  return (
-    <div className="flex h-screen w-full bg-background-light dark:bg-background-dark text-text-main dark:text-white font-display overflow-hidden">
-      <aside
-        className={`${isSidebarExpanded ? 'w-72' : 'w-20'} flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1e2330] transition-all duration-300 relative z-20`}
-      >
-        <button
-          onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
-          className="absolute -right-3 top-9 bg-white dark:bg-[#1e2330] border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-primary rounded-full p-1 shadow-md transition-colors z-50 flex items-center justify-center size-6"
-        >
-          <span className="material-symbols-outlined text-[14px]">
-            {isSidebarExpanded ? 'chevron_left' : 'chevron_right'}
-          </span>
-        </button>
 
-        <div className="flex h-full flex-col justify-between p-4 overflow-hidden">
-          <div className="flex flex-col gap-6">
-            <div
-              className={`flex items-center gap-3 px-2 cursor-pointer ${!isSidebarExpanded && 'justify-center px-0'}`}
-              onClick={() => navigateTo(Screen.LANDING)}
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
-                <span className="material-symbols-outlined text-2xl">school</span>
-              </div>
-              <div
-                className={`flex flex-col transition-opacity duration-200 ${isSidebarExpanded ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}
-              >
-                <h1 className="text-base font-bold leading-tight text-slate-900 dark:text-white whitespace-nowrap">
-                  StudentOS
-                </h1>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                  Admin Console
-                </p>
-              </div>
+  const handleTogglePermission = (permissionId: string) => {
+    setSelectedPermissionIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(permissionId)) {
+        next.delete(permissionId);
+      } else {
+        next.add(permissionId);
+      }
+      return next;
+    });
+  };
+
+  const handleSavePermissions = async () => {
+    if (!selectedRoleId) return;
+
+    setSaving(true);
+    try {
+      const result = await adminApi.updateRolePermissions(
+        selectedRoleId,
+        Array.from(selectedPermissionIds)
+      );
+
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success('Permissions updated successfully');
+        await fetchData(); // Refresh data
+      }
+    } catch (error) {
+      toast.error('Failed to save permissions');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleResetPermissions = () => {
+    if (selectedRole) {
+      setSelectedPermissionIds(new Set(selectedRole.permissions.map((p) => p.id)));
+    }
+  };
+
+  const handleCreateRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRoleName.trim()) {
+      toast.error('Role name is required');
+      return;
+    }
+
+    try {
+      const result = await adminApi.createRole({
+        name: newRoleName.trim(),
+        description: newRoleDescription.trim() || undefined,
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success('Role created successfully');
+        setNewRoleName('');
+        setNewRoleDescription('');
+        setShowCreateRoleModal(false);
+        await fetchData();
+        if (result.data?.id) {
+          setSelectedRoleId(result.data.id);
+        }
+      }
+    } catch (error) {
+      toast.error('Failed to create role');
+    }
+  };
+
+  const handleUpdateRoleName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRoleId || !editRoleName.trim()) return;
+
+    try {
+      const result = await adminApi.updateRole(selectedRoleId, {
+        name: editRoleName.trim(),
+        description: editRoleDescription.trim() || undefined,
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success('Role updated successfully');
+        setShowEditRoleNameModal(false);
+        await fetchData();
+      }
+    } catch (error) {
+      toast.error('Failed to update role');
+    }
+  };
+
+  const handleAssignRole = async (userId: string, roleId: string) => {
+    try {
+      const result = await adminApi.assignUserRole(userId, roleId);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success('Role assigned successfully');
+        setShowEditUserModal(false);
+        setEditingUser(null);
+        await fetchData();
+      }
+    } catch (error) {
+      toast.error('Failed to assign role');
+    }
+  };
+
+  const handleOpenEditUser = (adminUser: AdminUser) => {
+    setEditingUser(adminUser);
+    setShowEditUserModal(true);
+  };
+
+  const handleShowAuditLog = () => {
+    // For now, show a placeholder toast
+    toast('Audit Log feature coming soon!', { icon: '📋' });
+  };
+
+  // Time formatter
+  const formatTimeAgo = (date?: string) => {
+    if (!date) return 'Never';
+    const d = new Date(date);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
+  // Sidebar navigation items
+  const menuItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: '📊', screen: Screen.ADMIN_DASHBOARD },
+    { id: 'employers', label: 'Employers', icon: '🏢', screen: Screen.ADMIN_EMPLOYERS },
+    { id: 'pricing', label: 'Pricing', icon: '💳', screen: Screen.ADMIN_PRICING },
+    { id: 'users', label: 'Users', icon: '👥', screen: Screen.ADMIN_USERS },
+    { id: 'scholarships', label: 'Scholarships', icon: '🎓', screen: Screen.ADMIN_SCHOLARSHIPS },
+    { id: 'blog', label: 'Blog Management', icon: '📝', screen: Screen.ADMIN_BLOG },
+    {
+      id: 'roles',
+      label: 'Roles & Permissions',
+      icon: '🔐',
+      screen: Screen.ADMIN_ROLES,
+      active: true,
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex">
+      {/* Mobile sidebar overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`
+        fixed lg:static inset-y-0 left-0 z-50 w-64 
+        bg-gradient-to-b from-blue-600 to-blue-800 dark:from-slate-800 dark:to-slate-900
+        transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
+        transition-transform duration-300 ease-in-out
+        flex flex-col
+      `}
+      >
+        {/* Logo */}
+        <div className="p-4 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <span className="text-white text-xl">🎓</span>
             </div>
-            <nav className="flex flex-col gap-1">
-              <button
-                onClick={() => navigateTo(Screen.ADMIN_DASHBOARD)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors w-full ${!isSidebarExpanded ? 'justify-center' : 'text-left'}`}
-                title={!isSidebarExpanded ? 'Dashboard' : ''}
-              >
-                <span className="material-symbols-outlined">dashboard</span>
-                {isSidebarExpanded && (
-                  <span className="text-sm font-medium whitespace-nowrap">Dashboard</span>
-                )}
-              </button>
-              <button
-                onClick={() => navigateTo(Screen.ADMIN_EMPLOYERS)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors w-full ${!isSidebarExpanded ? 'justify-center' : 'text-left'}`}
-                title={!isSidebarExpanded ? 'Employers' : ''}
-              >
-                <span className="material-symbols-outlined">work</span>
-                {isSidebarExpanded && (
-                  <span className="text-sm font-medium whitespace-nowrap">Employers</span>
-                )}
-              </button>
-              <button
-                onClick={() => navigateTo(Screen.ADMIN_PRICING)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors w-full ${!isSidebarExpanded ? 'justify-center' : 'text-left'}`}
-                title={!isSidebarExpanded ? 'Pricing' : ''}
-              >
-                <span className="material-symbols-outlined">payments</span>
-                {isSidebarExpanded && (
-                  <span className="text-sm font-medium whitespace-nowrap">Pricing</span>
-                )}
-              </button>
-              <button
-                onClick={() => navigateTo(Screen.ADMIN_USERS)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors w-full ${!isSidebarExpanded ? 'justify-center' : 'text-left'}`}
-                title={!isSidebarExpanded ? 'Users' : ''}
-              >
-                <span className="material-symbols-outlined">group</span>
-                {isSidebarExpanded && (
-                  <span className="text-sm font-medium whitespace-nowrap">Users</span>
-                )}
-              </button>
-              <button
-                onClick={() => navigateTo(Screen.ADMIN_SCHOLARSHIPS)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors w-full ${!isSidebarExpanded ? 'justify-center' : 'text-left'}`}
-                title={!isSidebarExpanded ? 'Scholarships' : ''}
-              >
-                <span className="material-symbols-outlined">school</span>
-                {isSidebarExpanded && (
-                  <span className="text-sm font-medium whitespace-nowrap">Scholarships</span>
-                )}
-              </button>
-              <button
-                onClick={() => navigateTo(Screen.ADMIN_BLOG)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors w-full ${!isSidebarExpanded ? 'justify-center' : 'text-left'}`}
-                title={!isSidebarExpanded ? 'Blog Management' : ''}
-              >
-                <span className="material-symbols-outlined">article</span>
-                {isSidebarExpanded && (
-                  <span className="text-sm font-medium whitespace-nowrap">Blog Management</span>
-                )}
-              </button>
-              <button
-                onClick={() => navigateTo(Screen.ADMIN_ROLES)}
-                className={`flex items-center gap-3 rounded-lg bg-primary/10 px-3 py-2.5 text-primary dark:text-white dark:bg-primary/20 transition-colors w-full ${!isSidebarExpanded ? 'justify-center' : 'text-left'}`}
-                title={!isSidebarExpanded ? 'Roles & Permissions' : ''}
-              >
-                <span className="material-symbols-outlined fill-1">admin_panel_settings</span>
-                {isSidebarExpanded && (
-                  <span className="text-sm font-semibold whitespace-nowrap">
-                    Roles & Permissions
-                  </span>
-                )}
-              </button>
-            </nav>
-          </div>
-          <div className="flex flex-col gap-4 border-t border-slate-200 dark:border-slate-800 pt-4">
-            <button
-              onClick={() => navigateTo(Screen.ADMIN_SETTINGS)}
-              className={`flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer ${!isSidebarExpanded && 'justify-center px-0'}`}
-            >
-              <div className="h-10 w-10 shrink-0 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold">
-                AD
-              </div>
-              <div
-                className={`flex flex-col transition-opacity duration-200 text-left ${isSidebarExpanded ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}
-              >
-                <p className="text-sm font-semibold text-slate-900 dark:text-white whitespace-nowrap">
-                  Admin
-                </p>
-                <p className="text-xs text-primary dark:text-primary-light whitespace-nowrap">
-                  Profile Settings
-                </p>
-              </div>
-            </button>
-            <button
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              className={`flex w-full items-center gap-2 rounded-lg bg-slate-100 dark:bg-white/5 p-2 text-sm font-semibold text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors ${!isSidebarExpanded ? 'justify-center' : 'justify-center'} ${isLoggingOut ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={!isSidebarExpanded ? 'Logout' : ''}
-            >
-              <span className="material-symbols-outlined text-lg">
-                {isLoggingOut ? 'hourglass_empty' : 'logout'}
-              </span>
-              {isSidebarExpanded && <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>}
-            </button>
+            <div>
+              <h1 className="text-white font-bold text-lg">StudentOS</h1>
+              <p className="text-white/60 text-xs">Admin Console</p>
+            </div>
           </div>
         </div>
-      </aside>
-      <main className="flex flex-1 flex-col overflow-y-auto bg-[#f6f6f8] dark:bg-[#111421]">
-        <div className="mx-auto w-full max-w-7xl px-6 py-8">
-          <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-                Roles & Permissions
-              </h2>
-              <p className="text-base text-slate-500 dark:text-slate-400">
-                Manage team access and Role-Based Access Control (RBAC)
-              </p>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {menuItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => navigateTo(item.screen)}
+              className={`
+                w-full flex items-center gap-3 px-4 py-3 rounded-lg
+                transition-all duration-200
+                ${
+                  item.active
+                    ? 'bg-white/20 text-white'
+                    : 'text-white/70 hover:bg-white/10 hover:text-white'
+                }
+              `}
+            >
+              <span className="text-lg">{item.icon}</span>
+              <span className="font-medium">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* User section */}
+        <div className="p-4 border-t border-white/10">
+          <button
+            onClick={() => navigateTo(Screen.ADMIN_SETTINGS)}
+            className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 transition-colors"
+          >
+            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+              {user?.profile?.fullName?.charAt(0) || 'A'}
             </div>
-            <div className="flex gap-3">
-              <button className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] px-4 py-2 text-sm font-bold text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                <span className="material-symbols-outlined text-lg">security</span>
+            <div className="text-left flex-1">
+              <p className="text-white font-medium text-sm">{user?.profile?.fullName || 'Admin'}</p>
+              <p className="text-white/60 text-xs">Profile Settings</p>
+            </div>
+          </button>
+
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="w-full flex items-center gap-3 px-4 py-3 mt-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <span>🚪</span>
+            <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-1 overflow-y-auto">
+        {/* Header */}
+        <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-4">
+              <button
+                className="lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+                onClick={() => setIsSidebarOpen(true)}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </button>
+              <div>
+                <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  Roles & Permissions
+                </h1>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
+                  Manage team access and Role-Based Access Control (RBAC)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleShowAuditLog}
+                className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-2"
+              >
+                <span>📋</span>
                 <span>Audit Log</span>
               </button>
-              <button className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-dark transition-colors shadow-sm shadow-primary/30">
-                <span className="material-symbols-outlined text-lg">add_moderator</span>
+              <button
+                onClick={() => setShowCreateRoleModal(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                <span>+</span>
                 <span>Create New Role</span>
               </button>
             </div>
-          </header>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <section className="lg:col-span-2 flex flex-col gap-4">
-              <div className="flex flex-wrap items-center justify-between gap-4 py-2">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Admin Users</h3>
-                <div className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] px-3 py-2 shadow-sm flex-1 max-w-xs">
-                  <span className="material-symbols-outlined text-slate-500 dark:text-slate-400">
-                    search
-                  </span>
-                  <input
-                    className="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none"
-                    placeholder="Search admins..."
-                    type="text"
-                  />
+          </div>
+        </header>
+
+        {/* Content */}
+        <div className="p-6">
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Panel: Admin Users */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                      Admin Users
+                    </h2>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search admins..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <svg
+                      className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </div>
                 </div>
-              </div>
-              <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] shadow-sm">
+
+                {/* Users Table */}
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-white/5">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 dark:bg-slate-900/50">
                       <tr>
-                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           User
                         </th>
-                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           Role
                         </th>
-                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           Last Login
                         </th>
-                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">
+                        <th className="px-4 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                      <tr className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="h-9 w-9 rounded-full bg-cover bg-center"
-                              style={{
-                                backgroundImage:
-                                  "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBuz7qhWBsQWRjQG1k4CGzFYXhvsFourXvcGFagkS8Ygc6l63kf_qKcXMNXo-XVoFmsea9D7RojO2v9OQMLgttwk1_1u0Sefnl9iGveWDk1yjDa_QNz60aKEgmugT98Txyt38TOYyQMofKNHNsNclFGBFIyOx-Pp3k9dCugBZvO2F-jiAog2elvqhTUfgxkZ76fxUGvaAwgKP6ELOG_Pjri33lWH4w8m1KEmJ6TIWTLY4NQXPNvKCff1WFCaRn_73oR3o1z2hQVLt4')",
-                              }}
-                            ></div>
-                            <div>
-                              <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                                Jane Doe
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">
-                                jane@studentos.com
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                            <span className="material-symbols-outlined text-[14px]">shield</span>
-                            Super Admin
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
-                          Just now
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 transition-colors">
-                            <span className="material-symbols-outlined">edit</span>
-                          </button>
-                        </td>
-                      </tr>
-                      <tr className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 font-bold text-xs">
-                              AS
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                                Alex Smith
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">
-                                alex@studentos.com
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                            <span className="material-symbols-outlined text-[14px]">work</span>
-                            Employer Admin
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
-                          2 hours ago
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 transition-colors">
-                            <span className="material-symbols-outlined">edit</span>
-                          </button>
-                        </td>
-                      </tr>
+                      {filteredUsers.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={4}
+                            className="px-4 py-8 text-center text-slate-500 dark:text-slate-400"
+                          >
+                            {searchQuery ? 'No users match your search' : 'No admin users found'}
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredUsers.map((adminUser) => (
+                          <tr
+                            key={adminUser.id}
+                            className="hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                          >
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
+                                  {adminUser.fullName?.charAt(0) ||
+                                    adminUser.email.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                    {adminUser.fullName}
+                                  </p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    {adminUser.email}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              {adminUser.roles.length > 0 ? (
+                                <span
+                                  className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                    adminUser.roles[0].name === 'Super Admin'
+                                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                                      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                  }`}
+                                >
+                                  {adminUser.roles[0].name}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-slate-400">No role</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+                              {formatTimeAgo(adminUser.lastLoginAt)}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <button
+                                onClick={() => handleOpenEditUser(adminUser)}
+                                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-600 rounded transition-colors"
+                                title="Edit role"
+                              >
+                                <svg
+                                  className="w-4 h-4 text-slate-500 dark:text-slate-400"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                  />
+                                </svg>
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
-                <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] px-6 py-3">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Showing 4 of 12 admins
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-slate-900 dark:text-white disabled:opacity-50"
-                      disabled={true}
+
+                {/* Pagination */}
+                <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                  <span className="text-sm text-slate-600 dark:text-slate-400">
+                    Showing {filteredUsers.length} of {pagination.total} admins
+                  </span>
+                </div>
+              </div>
+
+              {/* Right Panel: Role Configuration */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                      Role Configuration
+                    </h2>
+
+                    {/* Role Selector */}
+                    <select
+                      value={selectedRoleId || ''}
+                      onChange={(e) => setSelectedRoleId(e.target.value)}
+                      className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500"
                     >
-                      Previous
-                    </button>
-                    <button className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-slate-900 dark:text-white">
-                      Next
-                    </button>
+                      {roles.map((role) => (
+                        <option key={role.id} value={role.id}>
+                          {role.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                </div>
-              </div>
-            </section>
-            <section className="flex flex-col gap-4">
-              <div className="flex flex-wrap items-center justify-between gap-4 py-2">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                  Role Configuration
-                </h3>
-                <div className="flex gap-2">
-                  <select className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] px-3 py-2 text-sm font-medium text-slate-900 dark:text-white focus:ring-primary focus:border-primary">
-                    <option>Employer Admin</option>
-                    <option>Super Admin</option>
-                    <option>Support Lead</option>
-                    <option>Viewer</option>
-                  </select>
-                </div>
-              </div>
-              <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] p-6 shadow-sm h-full flex flex-col">
-                <div className="flex items-start justify-between mb-6">
-                  <div>
-                    <h4 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <span className="material-symbols-outlined text-blue-600">work</span>
-                      Employer Admin
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      Can manage employer accounts and job posts.
-                    </p>
-                  </div>
-                  <button className="text-xs font-semibold text-primary hover:text-primary-dark transition-colors">
-                    Edit Name
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto pr-2 space-y-6">
-                  <div>
-                    <h5 className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-3 tracking-wider">
-                      User Management
-                    </h5>
-                    <div className="space-y-3">
-                      <label className="flex items-start gap-3 cursor-pointer group">
-                        <input
-                          defaultChecked={true}
-                          className="mt-0.5 h-4 w-4 rounded border-slate-200 text-primary focus:ring-primary dark:border-slate-700 dark:bg-white/10"
-                          disabled={true}
-                          type="checkbox"
-                        />
-                        <div className="text-sm">
-                          <p className="font-medium text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                            View Employer List
+
+                  {/* Selected Role Info */}
+                  {selectedRole && (
+                    <div className="flex items-start justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                          <span className="text-lg">🔐</span>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-slate-900 dark:text-white">
+                            {selectedRole.name}
+                          </h3>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">
+                            {selectedRole.description || 'No description'}
                           </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Access to read employer data.
+                          <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+                            {selectedRole.userCount} user{selectedRole.userCount !== 1 ? 's' : ''}{' '}
+                            assigned
                           </p>
                         </div>
-                      </label>
-                      <label className="flex items-start gap-3 cursor-pointer group">
-                        <input
-                          defaultChecked={true}
-                          className="mt-0.5 h-4 w-4 rounded border-slate-200 text-primary focus:ring-primary dark:border-slate-700 dark:bg-white/10"
-                          type="checkbox"
-                        />
-                        <div className="text-sm">
-                          <p className="font-medium text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                            Approve/Reject Employers
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Perform verification actions.
-                          </p>
-                        </div>
-                      </label>
+                      </div>
+                      {!selectedRole.isSystem && (
+                        <button
+                          onClick={() => setShowEditRoleNameModal(true)}
+                          className="text-blue-600 dark:text-blue-400 text-sm hover:underline"
+                        >
+                          Edit Name
+                        </button>
+                      )}
                     </div>
-                  </div>
-                  <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-                    <h5 className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-3 tracking-wider">
-                      Content Management
-                    </h5>
-                    <div className="space-y-3">
-                      <label className="flex items-start gap-3 cursor-pointer group">
-                        <input
-                          defaultChecked={true}
-                          className="mt-0.5 h-4 w-4 rounded border-slate-200 text-primary focus:ring-primary dark:border-slate-700 dark:bg-white/10"
-                          type="checkbox"
-                        />
-                        <div className="text-sm">
-                          <p className="font-medium text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                            Post Jobs
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Create listings on behalf of employers.
-                          </p>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
+                  )}
                 </div>
-                <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
-                  <button className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors">
+
+                {/* Permissions List */}
+                <div className="p-4 max-h-[400px] overflow-y-auto">
+                  {Object.entries(groupedPermissions).map(([category, perms]) => (
+                    <div key={category} className="mb-6 last:mb-0">
+                      <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                        {category}
+                      </h4>
+                      <div className="space-y-2">
+                        {perms.map((perm) => (
+                          <label
+                            key={perm.id}
+                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedPermissionIds.has(perm.id)}
+                              onChange={() => handleTogglePermission(perm.id)}
+                              className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                {perm.name}
+                              </p>
+                              {perm.description && (
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  {perm.description}
+                                </p>
+                              )}
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Actions */}
+                <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end gap-3">
+                  <button
+                    onClick={handleResetPermissions}
+                    className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                  >
                     Reset
                   </button>
-                  <button className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-dark transition-colors shadow-sm">
-                    Save Changes
+                  <button
+                    onClick={handleSavePermissions}
+                    disabled={saving}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                  >
+                    {saving && (
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
+                      </svg>
+                    )}
+                    <span>Save Changes</span>
                   </button>
                 </div>
               </div>
-            </section>
-          </div>
+            </div>
+          )}
         </div>
       </main>
+
+      {/* Create Role Modal */}
+      {showCreateRoleModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                Create New Role
+              </h3>
+            </div>
+            <form onSubmit={handleCreateRole} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Role Name
+                </label>
+                <input
+                  type="text"
+                  value={newRoleName}
+                  onChange={(e) => setNewRoleName(e.target.value)}
+                  placeholder="e.g., Content Manager"
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Description (optional)
+                </label>
+                <textarea
+                  value={newRoleDescription}
+                  onChange={(e) => setNewRoleDescription(e.target.value)}
+                  placeholder="What can this role do?"
+                  rows={3}
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateRoleModal(false)}
+                  className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Create Role
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Role Modal */}
+      {showEditUserModal && editingUser && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                Change User Role
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                {editingUser.fullName} ({editingUser.email})
+              </p>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                Select a new role for this user:
+              </p>
+              <div className="space-y-2">
+                {roles.map((role) => (
+                  <button
+                    key={role.id}
+                    onClick={() => handleAssignRole(editingUser.id, role.id)}
+                    className={`w-full p-4 text-left rounded-lg border-2 transition-colors ${
+                      editingUser.roles[0]?.id === role.id
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-700'
+                    }`}
+                  >
+                    <p className="font-medium text-slate-900 dark:text-white">{role.name}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{role.description}</p>
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-end gap-3 pt-6">
+                <button
+                  onClick={() => {
+                    setShowEditUserModal(false);
+                    setEditingUser(null);
+                  }}
+                  className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Role Name Modal */}
+      {showEditRoleNameModal && selectedRole && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Edit Role</h3>
+            </div>
+            <form onSubmit={handleUpdateRoleName} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Role Name
+                </label>
+                <input
+                  type="text"
+                  value={editRoleName}
+                  onChange={(e) => setEditRoleName(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={editRoleDescription}
+                  onChange={(e) => setEditRoleDescription(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditRoleNameModal(false)}
+                  className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+export default AdminRoles;

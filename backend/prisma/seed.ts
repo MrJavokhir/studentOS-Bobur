@@ -36,9 +36,267 @@ async function main() {
   });
   console.log('✅ Admin user created:', admin.email);
 
+  // ==========================================================================
+  // RBAC - Seed Permissions and Roles
+  // ==========================================================================
+
+  // Define all permissions by category
+  const permissionsData = [
+    // User Management
+    {
+      slug: 'users.view',
+      name: 'View Users',
+      category: 'User Management',
+      description: 'View list of all users',
+    },
+    {
+      slug: 'users.create',
+      name: 'Create Users',
+      category: 'User Management',
+      description: 'Create new user accounts',
+    },
+    {
+      slug: 'users.edit',
+      name: 'Edit Users',
+      category: 'User Management',
+      description: 'Edit user details and status',
+    },
+    {
+      slug: 'users.delete',
+      name: 'Delete Users',
+      category: 'User Management',
+      description: 'Delete user accounts',
+    },
+    // Employer Management
+    {
+      slug: 'employers.view',
+      name: 'View Employers',
+      category: 'Employer Management',
+      description: 'View employer accounts',
+    },
+    {
+      slug: 'employers.approve',
+      name: 'Approve Employers',
+      category: 'Employer Management',
+      description: 'Approve employer registrations',
+    },
+    {
+      slug: 'employers.reject',
+      name: 'Reject Employers',
+      category: 'Employer Management',
+      description: 'Reject employer registrations',
+    },
+    // Job Management
+    {
+      slug: 'jobs.view',
+      name: 'View Jobs',
+      category: 'Job Management',
+      description: 'View all job listings',
+    },
+    {
+      slug: 'jobs.create',
+      name: 'Create Jobs',
+      category: 'Job Management',
+      description: 'Create job listings',
+    },
+    {
+      slug: 'jobs.edit',
+      name: 'Edit Jobs',
+      category: 'Job Management',
+      description: 'Edit job listings',
+    },
+    {
+      slug: 'jobs.delete',
+      name: 'Delete Jobs',
+      category: 'Job Management',
+      description: 'Delete job listings',
+    },
+    {
+      slug: 'jobs.approve',
+      name: 'Approve Jobs',
+      category: 'Job Management',
+      description: 'Approve job submissions',
+    },
+    // Blog Management
+    {
+      slug: 'blog.view',
+      name: 'View Blog',
+      category: 'Blog Management',
+      description: 'View all blog posts',
+    },
+    {
+      slug: 'blog.create',
+      name: 'Create Blog Posts',
+      category: 'Blog Management',
+      description: 'Create new blog posts',
+    },
+    {
+      slug: 'blog.edit',
+      name: 'Edit Blog Posts',
+      category: 'Blog Management',
+      description: 'Edit blog posts',
+    },
+    {
+      slug: 'blog.delete',
+      name: 'Delete Blog Posts',
+      category: 'Blog Management',
+      description: 'Delete blog posts',
+    },
+    {
+      slug: 'blog.publish',
+      name: 'Publish Blog Posts',
+      category: 'Blog Management',
+      description: 'Publish/unpublish blog posts',
+    },
+    // Scholarship Management
+    {
+      slug: 'scholarships.view',
+      name: 'View Scholarships',
+      category: 'Scholarship Management',
+      description: 'View all scholarships',
+    },
+    {
+      slug: 'scholarships.create',
+      name: 'Create Scholarships',
+      category: 'Scholarship Management',
+      description: 'Create scholarships',
+    },
+    {
+      slug: 'scholarships.edit',
+      name: 'Edit Scholarships',
+      category: 'Scholarship Management',
+      description: 'Edit scholarships',
+    },
+    {
+      slug: 'scholarships.delete',
+      name: 'Delete Scholarships',
+      category: 'Scholarship Management',
+      description: 'Delete scholarships',
+    },
+    // System
+    {
+      slug: 'system.settings',
+      name: 'System Settings',
+      category: 'System',
+      description: 'Access system settings',
+    },
+    {
+      slug: 'system.audit-logs',
+      name: 'View Audit Logs',
+      category: 'System',
+      description: 'View admin audit logs',
+    },
+    {
+      slug: 'system.roles',
+      name: 'Manage Roles',
+      category: 'System',
+      description: 'Create and manage admin roles',
+    },
+  ];
+
+  // Upsert all permissions
+  const permissions: Record<string, string> = {};
+  for (const perm of permissionsData) {
+    const permission = await prisma.permission.upsert({
+      where: { slug: perm.slug },
+      update: {},
+      create: perm,
+    });
+    permissions[perm.slug] = permission.id;
+  }
+  console.log('✅ Permissions created (' + permissionsData.length + ' permissions)');
+
+  // Define roles with their permissions
+  const rolesData = [
+    {
+      name: 'Super Admin',
+      description: 'Full access to all system features',
+      isSystem: true,
+      permissionSlugs: Object.keys(permissions), // All permissions
+    },
+    {
+      name: 'Employer Admin',
+      description: 'Manage employer accounts and job posts',
+      isSystem: true,
+      permissionSlugs: [
+        'employers.view',
+        'employers.approve',
+        'employers.reject',
+        'jobs.view',
+        'jobs.create',
+        'jobs.edit',
+        'jobs.delete',
+        'jobs.approve',
+      ],
+    },
+    {
+      name: 'Content Editor',
+      description: 'Manage blog and content',
+      isSystem: true,
+      permissionSlugs: [
+        'blog.view',
+        'blog.create',
+        'blog.edit',
+        'blog.delete',
+        'blog.publish',
+        'scholarships.view',
+        'scholarships.create',
+        'scholarships.edit',
+      ],
+    },
+    {
+      name: 'Support',
+      description: 'View-only access for support staff',
+      isSystem: true,
+      permissionSlugs: [
+        'users.view',
+        'employers.view',
+        'jobs.view',
+        'blog.view',
+        'scholarships.view',
+        'system.audit-logs',
+      ],
+    },
+  ];
+
+  // Upsert roles and their permissions
+  for (const roleData of rolesData) {
+    const role = await prisma.adminRole.upsert({
+      where: { name: roleData.name },
+      update: { description: roleData.description },
+      create: {
+        name: roleData.name,
+        description: roleData.description,
+        isSystem: roleData.isSystem,
+      },
+    });
+
+    // Clear existing permissions for this role and add new ones
+    await prisma.rolePermission.deleteMany({ where: { roleId: role.id } });
+    for (const slug of roleData.permissionSlugs) {
+      if (permissions[slug]) {
+        await prisma.rolePermission.create({
+          data: { roleId: role.id, permissionId: permissions[slug] },
+        });
+      }
+    }
+  }
+  console.log('✅ Admin roles created (' + rolesData.length + ' roles)');
+
+  // Assign Super Admin role to the admin user
+  const superAdminRole = await prisma.adminRole.findUnique({ where: { name: 'Super Admin' } });
+  if (superAdminRole) {
+    await prisma.userAdminRole.upsert({
+      where: { userId_roleId: { userId: admin.id, roleId: superAdminRole.id } },
+      update: {},
+      create: { userId: admin.id, roleId: superAdminRole.id },
+    });
+    console.log('✅ Super Admin role assigned to admin user');
+  }
+
   // Create sample employers
   const employerPassword = await bcrypt.hash(employerPasswordRaw, 12);
-  
+
   const employer1 = await prisma.user.upsert({
     where: { email: 'hr@techflow.com' },
     update: {},
@@ -53,7 +311,8 @@ async function main() {
           tagline: 'Innovating the future of tech',
           industry: 'Software Development',
           companySize: '11-50 employees',
-          description: 'TechFlow is a cutting-edge software company focused on building innovative solutions.',
+          description:
+            'TechFlow is a cutting-edge software company focused on building innovative solutions.',
           website: 'https://techflow.com',
           city: 'San Francisco',
           state: 'CA',
@@ -107,9 +366,20 @@ async function main() {
       salaryMin: 70000,
       salaryMax: 90000,
       department: 'Engineering',
-      description: 'We are looking for a passionate Junior Frontend Developer to join our growing team. You will work on building modern web applications using React and TypeScript.',
-      requirements: ['React/Vue experience', 'TypeScript knowledge', 'CSS/Tailwind proficiency', 'Git version control'],
-      responsibilities: ['Build responsive UIs', 'Collaborate with design team', 'Write clean code', 'Participate in code reviews'],
+      description:
+        'We are looking for a passionate Junior Frontend Developer to join our growing team. You will work on building modern web applications using React and TypeScript.',
+      requirements: [
+        'React/Vue experience',
+        'TypeScript knowledge',
+        'CSS/Tailwind proficiency',
+        'Git version control',
+      ],
+      responsibilities: [
+        'Build responsive UIs',
+        'Collaborate with design team',
+        'Write clean code',
+        'Participate in code reviews',
+      ],
       benefits: ['Remote work', 'Health insurance', '401k matching', 'Unlimited PTO'],
       employerId: employerProfile1!.id,
     },
@@ -121,9 +391,20 @@ async function main() {
       salaryMin: 40000,
       salaryMax: 50000,
       department: 'Design',
-      description: 'Join our design team and help create beautiful user experiences. Perfect for students looking to gain real-world design experience.',
-      requirements: ['Figma proficiency', 'Portfolio required', 'Design fundamentals', 'Strong communication'],
-      responsibilities: ['Create wireframes', 'Design prototypes', 'User research', 'Design system maintenance'],
+      description:
+        'Join our design team and help create beautiful user experiences. Perfect for students looking to gain real-world design experience.',
+      requirements: [
+        'Figma proficiency',
+        'Portfolio required',
+        'Design fundamentals',
+        'Strong communication',
+      ],
+      responsibilities: [
+        'Create wireframes',
+        'Design prototypes',
+        'User research',
+        'Design system maintenance',
+      ],
       benefits: ['Mentorship program', 'Flexible hours', 'Learning budget'],
       employerId: employerProfile1!.id,
     },
@@ -135,9 +416,20 @@ async function main() {
       salaryMin: 85000,
       salaryMax: 110000,
       department: 'Engineering',
-      description: 'We are looking for a Backend Developer to build scalable APIs and microservices using Node.js and Python.',
-      requirements: ['Node.js/Python experience', 'PostgreSQL/MongoDB', 'REST API design', 'Docker knowledge'],
-      responsibilities: ['Design APIs', 'Database optimization', 'Write documentation', 'Mentor junior developers'],
+      description:
+        'We are looking for a Backend Developer to build scalable APIs and microservices using Node.js and Python.',
+      requirements: [
+        'Node.js/Python experience',
+        'PostgreSQL/MongoDB',
+        'REST API design',
+        'Docker knowledge',
+      ],
+      responsibilities: [
+        'Design APIs',
+        'Database optimization',
+        'Write documentation',
+        'Mentor junior developers',
+      ],
       benefits: ['Competitive salary', 'Stock options', 'Gym membership', 'Catered lunches'],
       employerId: employerProfile2!.id,
     },
@@ -149,9 +441,20 @@ async function main() {
       salaryMin: 35000,
       salaryMax: 45000,
       department: 'Data',
-      description: 'Work with our data team to analyze large datasets and build machine learning models for product recommendations.',
-      requirements: ['Python/R proficiency', 'Statistics knowledge', 'SQL experience', 'Currently enrolled student'],
-      responsibilities: ['Data analysis', 'Build ML models', 'Create visualizations', 'Present findings'],
+      description:
+        'Work with our data team to analyze large datasets and build machine learning models for product recommendations.',
+      requirements: [
+        'Python/R proficiency',
+        'Statistics knowledge',
+        'SQL experience',
+        'Currently enrolled student',
+      ],
+      responsibilities: [
+        'Data analysis',
+        'Build ML models',
+        'Create visualizations',
+        'Present findings',
+      ],
       benefits: ['Remote work', 'Flexible schedule', 'Return offer potential'],
       employerId: employerProfile2!.id,
     },
@@ -163,9 +466,20 @@ async function main() {
       salaryMin: 75000,
       salaryMax: 95000,
       department: 'Product',
-      description: 'Join our product team to help define and launch new features. Work closely with engineering and design teams.',
-      requirements: ['Strong communication', 'Analytical mindset', 'Technical background preferred', 'User-focused thinking'],
-      responsibilities: ['Write PRDs', 'User interviews', 'Roadmap planning', 'Stakeholder management'],
+      description:
+        'Join our product team to help define and launch new features. Work closely with engineering and design teams.',
+      requirements: [
+        'Strong communication',
+        'Analytical mindset',
+        'Technical background preferred',
+        'User-focused thinking',
+      ],
+      responsibilities: [
+        'Write PRDs',
+        'User interviews',
+        'Roadmap planning',
+        'Stakeholder management',
+      ],
       benefits: ['Career growth', 'Health benefits', 'Education stipend'],
       employerId: employerProfile1!.id,
     },
@@ -177,9 +491,20 @@ async function main() {
       salaryMin: 50000,
       salaryMax: 65000,
       department: 'Marketing',
-      description: 'Help us grow our brand and reach new customers through digital marketing campaigns and content creation.',
-      requirements: ['Marketing degree or experience', 'Social media savvy', 'Content creation skills', 'Analytics tools'],
-      responsibilities: ['Social media management', 'Content calendar', 'Campaign analysis', 'Event coordination'],
+      description:
+        'Help us grow our brand and reach new customers through digital marketing campaigns and content creation.',
+      requirements: [
+        'Marketing degree or experience',
+        'Social media savvy',
+        'Content creation skills',
+        'Analytics tools',
+      ],
+      responsibilities: [
+        'Social media management',
+        'Content calendar',
+        'Campaign analysis',
+        'Event coordination',
+      ],
       benefits: ['Creative environment', 'Team events', 'Professional development'],
       employerId: employerProfile2!.id,
     },
@@ -202,7 +527,8 @@ async function main() {
       awardType: 'Full Tuition',
       awardAmount: 'Up to $50,000/year',
       deadline: new Date('2026-03-15'),
-      description: 'Merit-based scholarship for outstanding international students demonstrating academic excellence and leadership potential.',
+      description:
+        'Merit-based scholarship for outstanding international students demonstrating academic excellence and leadership potential.',
       applicationUrl: 'https://harvard.edu/scholarships',
     },
     {
@@ -213,7 +539,8 @@ async function main() {
       awardType: 'Partial Funding',
       awardAmount: '£15,000',
       deadline: new Date('2026-04-01'),
-      description: 'For students demonstrating exceptional leadership potential and commitment to making a positive impact in their communities.',
+      description:
+        'For students demonstrating exceptional leadership potential and commitment to making a positive impact in their communities.',
       applicationUrl: 'https://ox.ac.uk/scholarships',
     },
     {
@@ -224,7 +551,8 @@ async function main() {
       awardType: 'Research Grant',
       awardAmount: '$25,000',
       deadline: new Date('2026-02-28'),
-      description: 'Supporting innovative research in science and technology. Open to students pursuing STEM degrees.',
+      description:
+        'Supporting innovative research in science and technology. Open to students pursuing STEM degrees.',
       applicationUrl: 'https://mit.edu/grants',
     },
     {
@@ -235,7 +563,8 @@ async function main() {
       awardType: 'Full Funding',
       awardAmount: 'Full tuition + living expenses',
       deadline: new Date('2026-11-01'),
-      description: 'The UK governments international scholarship program for future leaders. Covers tuition, travel, and living costs.',
+      description:
+        'The UK governments international scholarship program for future leaders. Covers tuition, travel, and living costs.',
       applicationUrl: 'https://chevening.org/scholarships',
     },
     {
@@ -246,7 +575,8 @@ async function main() {
       awardType: 'Full Funding',
       awardAmount: 'Full tuition + stipend',
       deadline: new Date('2026-10-15'),
-      description: 'Prestigious international exchange program offering grants for graduate study, research, and teaching.',
+      description:
+        'Prestigious international exchange program offering grants for graduate study, research, and teaching.',
       applicationUrl: 'https://cies.org/fulbright',
     },
     {
@@ -257,7 +587,8 @@ async function main() {
       awardType: 'Full Funding',
       awardAmount: '€1,200/month + benefits',
       deadline: new Date('2026-09-30'),
-      description: 'For international students pursuing masters or PhD degrees at German universities.',
+      description:
+        'For international students pursuing masters or PhD degrees at German universities.',
       applicationUrl: 'https://daad.de/en',
     },
     {
@@ -268,7 +599,8 @@ async function main() {
       awardType: 'Full Funding',
       awardAmount: 'Full tuition + living allowance',
       deadline: new Date('2026-05-15'),
-      description: 'Scholarships for students from developing countries to study at Australian universities.',
+      description:
+        'Scholarships for students from developing countries to study at Australian universities.',
       applicationUrl: 'https://australiaawards.gov.au',
     },
     {
@@ -279,7 +611,8 @@ async function main() {
       awardType: 'Full Funding',
       awardAmount: 'CHF 1,920/month',
       deadline: new Date('2026-08-01'),
-      description: 'For researchers and artists from abroad who wish to pursue doctoral or postdoctoral research in Switzerland.',
+      description:
+        'For researchers and artists from abroad who wish to pursue doctoral or postdoctoral research in Switzerland.',
       applicationUrl: 'https://sbfi.admin.ch/eskas',
     },
     {
@@ -290,7 +623,8 @@ async function main() {
       awardType: 'Full Funding',
       awardAmount: 'Full cost of study',
       deadline: new Date('2026-12-01'),
-      description: 'For outstanding applicants from outside the UK to pursue a full-time postgraduate degree at Cambridge.',
+      description:
+        'For outstanding applicants from outside the UK to pursue a full-time postgraduate degree at Cambridge.',
       applicationUrl: 'https://gatescambridge.org',
     },
     {
@@ -301,7 +635,8 @@ async function main() {
       awardType: 'Full Funding',
       awardAmount: '¥117,000/month + tuition',
       deadline: new Date('2026-04-30'),
-      description: 'Comprehensive scholarship covering tuition, airfare, and monthly stipend for study in Japan.',
+      description:
+        'Comprehensive scholarship covering tuition, airfare, and monthly stipend for study in Japan.',
       applicationUrl: 'https://studyinjapan.go.jp/en',
     },
   ];
@@ -334,7 +669,8 @@ Understand the company's products, culture, and values. This shows genuine inter
 
 ## 5. Follow Up
 After the interview, send a thank-you email. It's a small gesture that can make a big difference.`,
-      excerpt: 'Learn the essential strategies to prepare for and succeed in your next tech interview.',
+      excerpt:
+        'Learn the essential strategies to prepare for and succeed in your next tech interview.',
       coverImageUrl: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=800',
       tags: ['career', 'interview', 'tech'],
       status: 'PUBLISHED' as const,
@@ -362,7 +698,8 @@ Full funding for postgraduate study at the University of Cambridge.
 Germany's comprehensive funding program for international students.
 
 And many more! Start your applications early and don't be afraid to apply to multiple programs.`,
-      excerpt: 'Discover the top scholarships that can help fund your education without breaking the bank.',
+      excerpt:
+        'Discover the top scholarships that can help fund your education without breaking the bank.',
       coverImageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800',
       tags: ['scholarships', 'funding', 'education'],
       status: 'PUBLISHED' as const,
@@ -388,7 +725,8 @@ Missing one day doesn't mean you've failed. Get back on track the next day.
 
 ## Reward Yourself
 Celebrate small wins. This positive reinforcement makes habits more likely to stick.`,
-      excerpt: 'Learn science-backed strategies to build and maintain productive habits as a student.',
+      excerpt:
+        'Learn science-backed strategies to build and maintain productive habits as a student.',
       coverImageUrl: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=800',
       tags: ['productivity', 'habits', 'student-life'],
       status: 'PUBLISHED' as const,
@@ -410,14 +748,26 @@ Celebrate small wins. This positive reinforcement makes habits more likely to st
       name: 'Free',
       price: 0,
       interval: 'MONTHLY' as const,
-      features: ['Basic job search', 'Limited scholarships', '3 CV analyses/month', 'Community access'],
+      features: [
+        'Basic job search',
+        'Limited scholarships',
+        '3 CV analyses/month',
+        'Community access',
+      ],
       isActive: true,
     },
     {
       name: 'Pro',
       price: 9.99,
       interval: 'MONTHLY' as const,
-      features: ['Unlimited job search', 'All scholarships', 'Unlimited CV analyses', 'AI cover letters', 'Priority support', 'Ad-free experience'],
+      features: [
+        'Unlimited job search',
+        'All scholarships',
+        'Unlimited CV analyses',
+        'AI cover letters',
+        'Priority support',
+        'Ad-free experience',
+      ],
       isActive: true,
       isPopular: true,
     },
@@ -425,14 +775,25 @@ Celebrate small wins. This positive reinforcement makes habits more likely to st
       name: 'Annual Pro',
       price: 79.99,
       interval: 'YEARLY' as const,
-      features: ['Everything in Pro', 'Save 33%', 'Early access to new features', 'Exclusive webinars'],
+      features: [
+        'Everything in Pro',
+        'Save 33%',
+        'Early access to new features',
+        'Exclusive webinars',
+      ],
       isActive: true,
     },
     {
       name: 'Enterprise',
       price: 29.99,
       interval: 'MONTHLY' as const,
-      features: ['Everything in Pro', 'Team features', 'Custom integrations', 'Dedicated support', 'API access'],
+      features: [
+        'Everything in Pro',
+        'Team features',
+        'Custom integrations',
+        'Dedicated support',
+        'API access',
+      ],
       isActive: true,
     },
   ];

@@ -109,6 +109,9 @@ model User {
   budgets           Budget[]
   notifications     Notification[]
 
+  // RBAC - Admin Roles
+  adminRoles        UserAdminRole[]
+
   @@index([email])
   @@index([googleId])
 }
@@ -550,4 +553,52 @@ model AuditLog {
   @@index([adminId])
   @@index([action])
   @@index([createdAt])
+}
+
+// =============================================================================
+// RBAC - Role-Based Access Control
+// =============================================================================
+
+model AdminRole {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false) // Prevent deletion of system roles
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permissions RolePermission[]
+  userRoles   UserAdminRole[]
+}
+
+model Permission {
+  id          String @id @default(cuid())
+  slug        String @unique // e.g., "users.view", "jobs.approve"
+  name        String // Human-readable name
+  category    String // Grouping: "User Management", "Content Management"
+  description String?
+
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         AdminRole  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model UserAdminRole {
+  id        String    @id @default(cuid())
+  userId    String
+  roleId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      AdminRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
 }

@@ -18,10 +18,7 @@ class ApiClient {
     return localStorage.getItem('accessToken');
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const token = this.getToken();
 
     const headers: HeadersInit = {
@@ -77,7 +74,9 @@ class ApiClient {
         localStorage.setItem('refreshToken', data.refreshToken);
         return true;
       }
-    } catch { }
+    } catch {
+      // Silently fail - refresh token expired or invalid
+    }
 
     // Clear tokens on failure
     localStorage.removeItem('accessToken');
@@ -106,6 +105,13 @@ class ApiClient {
 
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { method: 'DELETE' });
+  }
+
+  async put<T>(endpoint: string, data: unknown): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   }
 
   async postFormData<T>(endpoint: string, data: FormData): Promise<ApiResponse<T>> {
@@ -138,7 +144,10 @@ export const api = new ApiClient(API_URL);
 export const authApi = {
   register: async (data: { email: string; password: string; fullName: string }) => {
     console.log('[Auth] Attempting registration for:', data.email);
-    const result = await api.post<{ user: any; accessToken: string; refreshToken: string }>('/auth/register', data);
+    const result = await api.post<{ user: any; accessToken: string; refreshToken: string }>(
+      '/auth/register',
+      data
+    );
     if (result.error) {
       console.error('[Auth] Registration failed:', result.error);
     } else {
@@ -149,23 +158,28 @@ export const authApi = {
 
   login: async (data: { email: string; password: string }) => {
     console.log('[Auth] Attempting login for:', data.email);
-    const result = await api.post<{ user: any; accessToken: string; refreshToken: string }>('/auth/login', data);
+    const result = await api.post<{ user: any; accessToken: string; refreshToken: string }>(
+      '/auth/login',
+      data
+    );
     if (result.error) {
       console.error('[Auth] Login failed:', result.error);
     } else {
-      console.log('[Auth] Login successful:', result.data?.user?.email, 'Role:', result.data?.user?.role);
+      console.log(
+        '[Auth] Login successful:',
+        result.data?.user?.email,
+        'Role:',
+        result.data?.user?.role
+      );
     }
     return result;
   },
 
-  logout: (refreshToken: string) =>
-    api.post('/auth/logout', { refreshToken }),
+  logout: (refreshToken: string) => api.post('/auth/logout', { refreshToken }),
 
-  me: () =>
-    api.get<{ id: string; email: string; role: string; profile: any }>('/auth/me'),
+  me: () => api.get<{ id: string; email: string; role: string; profile: any }>('/auth/me'),
 
-  onboarding: (data: any) =>
-    api.post('/auth/onboarding', data),
+  onboarding: (data: any) => api.post('/auth/onboarding', data),
 
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     api.post<{ message: string }>('/auth/change-password', data),
@@ -240,8 +254,7 @@ export const jobApi = {
 // Habits API
 export const habitApi = {
   list: () => api.get('/habits'),
-  create: (data: { title: string; icon?: string; color?: string }) =>
-    api.post('/habits', data),
+  create: (data: { title: string; icon?: string; color?: string }) => api.post('/habits', data),
   update: (id: string, data: any) => api.patch(`/habits/${id}`, data),
   delete: (id: string) => api.delete(`/habits/${id}`),
   log: (id: string) => api.post(`/habits/${id}/log`),
@@ -273,14 +286,17 @@ export const blogApi = {
     tags?: string[];
     status?: 'DRAFT' | 'PUBLISHED';
   }) => api.post('/blog', data),
-  update: (id: string, data: {
-    title?: string;
-    content?: string;
-    excerpt?: string;
-    coverImageUrl?: string;
-    tags?: string[];
-    status?: 'DRAFT' | 'PUBLISHED';
-  }) => api.patch(`/blog/${id}`, data),
+  update: (
+    id: string,
+    data: {
+      title?: string;
+      content?: string;
+      excerpt?: string;
+      coverImageUrl?: string;
+      tags?: string[];
+      status?: 'DRAFT' | 'PUBLISHED';
+    }
+  ) => api.patch(`/blog/${id}`, data),
   delete: (id: string) => api.delete(`/blog/${id}`),
 };
 
@@ -288,13 +304,11 @@ export const blogApi = {
 export const communityApi = {
   list: (page?: number) => api.get(`/community?page=${page || 1}`),
   get: (id: string) => api.get(`/community/${id}`),
-  create: (data: { content: string; imageUrl?: string }) =>
-    api.post('/community', data),
+  create: (data: { content: string; imageUrl?: string }) => api.post('/community', data),
   delete: (id: string) => api.delete(`/community/${id}`),
   like: (id: string) => api.post(`/community/${id}/like`),
   unlike: (id: string) => api.delete(`/community/${id}/like`),
-  comment: (id: string, content: string) =>
-    api.post(`/community/${id}/comments`, { content }),
+  comment: (id: string, content: string) => api.post(`/community/${id}/comments`, { content }),
 };
 
 // AI API
@@ -313,8 +327,7 @@ export const aiApi = {
     api.post('/ai/cover-letter', data),
   generateLearningPlan: (data: { goal: string; timeframe?: string }) =>
     api.post('/ai/learning-plan', data),
-  checkPlagiarism: (text: string) =>
-    api.post('/ai/plagiarism-check', { text }),
+  checkPlagiarism: (text: string) => api.post('/ai/plagiarism-check', { text }),
   generatePresentation: (data: { topic: string; slideCount?: number; style?: string }) =>
     api.post('/ai/generate-presentation', data),
 };
@@ -341,14 +354,58 @@ export const adminApi = {
   deletePricing: (id: string) => api.delete(`/admin/pricing/${id}`),
   getMessages: () => api.get('/admin/messages'),
   markMessageRead: (id: string) => api.patch(`/admin/messages/${id}`, {}),
+
+  // Roles & Permissions
+  getRoles: () => api.get<any[]>('/admin/roles'),
+  getRole: (id: string) => api.get<any>(`/admin/roles/${id}`),
+  createRole: (data: { name: string; description?: string; permissionIds?: string[] }) =>
+    api.post<any>('/admin/roles', data),
+  updateRole: (id: string, data: { name?: string; description?: string }) =>
+    api.patch<any>(`/admin/roles/${id}`, data),
+  deleteRole: (id: string) => api.delete(`/admin/roles/${id}`),
+  updateRolePermissions: (id: string, permissionIds: string[]) =>
+    api.put<any>(`/admin/roles/${id}/permissions`, { permissionIds }),
+
+  getPermissions: () =>
+    api.get<{ permissions: any[]; grouped: Record<string, any[]> }>('/admin/permissions'),
+
+  getAdminUsers: (params?: { search?: string; page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) searchParams.append(key, String(value));
+      });
+    }
+    return api.get<{ users: any[]; pagination: any }>(`/admin/roles/users?${searchParams}`);
+  },
+  assignUserRole: (userId: string, roleId: string) =>
+    api.patch<any>(`/admin/users/${userId}/role`, { roleId }),
+
+  getAuditLogs: (params?: { page?: number; limit?: number; action?: string; adminId?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) searchParams.append(key, String(value));
+      });
+    }
+    return api.get<{ logs: any[]; pagination: any }>(`/admin/audit-logs?${searchParams}`);
+  },
 };
 
 // Finance API
 export const financeApi = {
-  getSummary: () => api.get<{ income: number; expense: number; balance: number; recentTransactions: any[] }>('/finance/summary'),
+  getSummary: () =>
+    api.get<{ income: number; expense: number; balance: number; recentTransactions: any[] }>(
+      '/finance/summary'
+    ),
   getTransactions: () => api.get<any[]>('/finance/transactions'),
-  createTransaction: (data: { amount: number; type: 'INCOME' | 'EXPENSE'; description?: string; categoryId?: string; date?: string }) =>
-    api.post<any>('/finance/transactions', data),
+  createTransaction: (data: {
+    amount: number;
+    type: 'INCOME' | 'EXPENSE';
+    description?: string;
+    categoryId?: string;
+    date?: string;
+  }) => api.post<any>('/finance/transactions', data),
   deleteTransaction: (id: string) => api.delete(`/finance/transactions/${id}`),
   getBudgets: () => api.get<any[]>('/finance/budgets'),
 };
@@ -365,8 +422,19 @@ export const notificationApi = {
 export const employerApi = {
   getProfile: () => api.get('/employer/me'),
   updateProfile: (data: any) => api.patch('/employer/me', data),
-  getStats: () => api.get<{ activeJobs: number; totalApplicants: number; newApplications: number; shortlisted: number }>('/employer/stats'),
-  getApplications: (params?: { page?: number; limit?: number; status?: string; search?: string }) => {
+  getStats: () =>
+    api.get<{
+      activeJobs: number;
+      totalApplicants: number;
+      newApplications: number;
+      shortlisted: number;
+    }>('/employer/stats'),
+  getApplications: (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    search?: string;
+  }) => {
     const searchParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
