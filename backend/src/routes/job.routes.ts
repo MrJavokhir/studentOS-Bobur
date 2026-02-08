@@ -9,91 +9,96 @@ import { mediumCache } from '../middleware/cache.middleware.js';
 const router = Router();
 
 // Get all jobs (cached for 5 minutes)
-router.get('/', optionalAuth, mediumCache, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  try {
-    const { 
-      search, 
-      locationType, 
-      minSalary, 
-      maxSalary,
-      department,
-      page = '1', 
-      limit = '10' 
-    } = req.query as any;
+router.get(
+  '/',
+  optionalAuth,
+  mediumCache,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const {
+        search,
+        locationType,
+        minSalary,
+        maxSalary,
+        department,
+        page = '1',
+        limit = '10',
+      } = req.query as any;
 
-    const where: any = {
-      status: 'ACTIVE',
-    };
+      const where: any = {
+        status: 'ACTIVE',
+      };
 
-    if (locationType) where.locationType = locationType;
-    if (department) where.department = department;
-    if (minSalary) where.salaryMin = { gte: parseInt(minSalary) };
-    if (maxSalary) where.salaryMax = { lte: parseInt(maxSalary) };
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { company: { contains: search, mode: 'insensitive' } },
-        { location: { contains: search, mode: 'insensitive' } },
-      ];
-    }
+      if (locationType) where.locationType = locationType;
+      if (department) where.department = department;
+      if (minSalary) where.salaryMin = { gte: parseInt(minSalary) };
+      if (maxSalary) where.salaryMax = { lte: parseInt(maxSalary) };
+      if (search) {
+        where.OR = [
+          { title: { contains: search, mode: 'insensitive' } },
+          { company: { contains: search, mode: 'insensitive' } },
+          { location: { contains: search, mode: 'insensitive' } },
+        ];
+      }
 
-    const [jobs, total] = await Promise.all([
-      prisma.job.findMany({
-        where,
-        include: {
-          employer: {
-            select: {
-              companyName: true,
-              logoUrl: true,
+      const [jobs, total] = await Promise.all([
+        prisma.job.findMany({
+          where,
+          include: {
+            employer: {
+              select: {
+                companyName: true,
+                logoUrl: true,
+              },
+            },
+            _count: {
+              select: { applications: true },
             },
           },
-          _count: {
-            select: { applications: true },
-          },
-        },
-        orderBy: { postedAt: 'desc' },
-        skip: (parseInt(page) - 1) * parseInt(limit),
-        take: parseInt(limit),
-      }),
-      prisma.job.count({ where }),
-    ]);
-
-    // Get saved jobs and applications for authenticated user
-    let savedIds: string[] = [];
-    let appliedIds: string[] = [];
-    if (req.user) {
-      const [saved, applications] = await Promise.all([
-        prisma.savedJob.findMany({
-          where: { userId: req.user.id },
-          select: { jobId: true },
+          orderBy: { postedAt: 'desc' },
+          skip: (parseInt(page) - 1) * parseInt(limit),
+          take: parseInt(limit),
         }),
-        prisma.jobApplication.findMany({
-          where: { userId: req.user.id },
-          select: { jobId: true, status: true },
-        }),
+        prisma.job.count({ where }),
       ]);
-      savedIds = saved.map((s) => s.jobId);
-      appliedIds = applications.map((a) => a.jobId);
-    }
 
-    res.json({
-      jobs: jobs.map((j) => ({
-        ...j,
-        isSaved: savedIds.includes(j.id),
-        hasApplied: appliedIds.includes(j.id),
-        applicantCount: j._count.applications,
-      })),
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / parseInt(limit)),
-      },
-    });
-  } catch (error) {
-    next(error);
+      // Get saved jobs and applications for authenticated user
+      let savedIds: string[] = [];
+      let appliedIds: string[] = [];
+      if (req.user) {
+        const [saved, applications] = await Promise.all([
+          prisma.savedJob.findMany({
+            where: { userId: req.user.id },
+            select: { jobId: true },
+          }),
+          prisma.jobApplication.findMany({
+            where: { userId: req.user.id },
+            select: { jobId: true, status: true },
+          }),
+        ]);
+        savedIds = saved.map((s) => s.jobId);
+        appliedIds = applications.map((a) => a.jobId);
+      }
+
+      res.json({
+        jobs: jobs.map((j) => ({
+          ...j,
+          isSaved: savedIds.includes(j.id),
+          hasApplied: appliedIds.includes(j.id),
+          applicantCount: j._count.applications,
+        })),
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / parseInt(limit)),
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 // Get single job
 router.get('/:id', optionalAuth, async (req: AuthenticatedRequest, res, next) => {
@@ -120,7 +125,7 @@ router.get('/:id', optionalAuth, async (req: AuthenticatedRequest, res, next) =>
     }
 
     let isSaved = false;
-    let application = null;
+    let application: any = null;
     if (req.user) {
       const [saved, app] = await Promise.all([
         prisma.savedJob.findUnique({
@@ -267,105 +272,122 @@ router.post('/', authenticate, requireEmployer, async (req: AuthenticatedRequest
 });
 
 // Employer: Get own jobs
-router.get('/employer/list', authenticate, requireEmployer, async (req: AuthenticatedRequest, res, next) => {
-  try {
-    const employerProfile = await prisma.employerProfile.findUnique({
-      where: { userId: req.user!.id },
-    });
+router.get(
+  '/employer/list',
+  authenticate,
+  requireEmployer,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const employerProfile = await prisma.employerProfile.findUnique({
+        where: { userId: req.user!.id },
+      });
 
-    if (!employerProfile) {
-      res.json([]);
-      return;
+      if (!employerProfile) {
+        res.json([]);
+        return;
+      }
+
+      const jobs = await prisma.job.findMany({
+        where: { employerId: employerProfile.id },
+        include: {
+          _count: { select: { applications: true } },
+        },
+        orderBy: { postedAt: 'desc' },
+      });
+
+      res.json(
+        jobs.map((j) => ({
+          ...j,
+          applicantCount: j._count.applications,
+        }))
+      );
+    } catch (error) {
+      next(error);
     }
-
-    const jobs = await prisma.job.findMany({
-      where: { employerId: employerProfile.id },
-      include: {
-        _count: { select: { applications: true } },
-      },
-      orderBy: { postedAt: 'desc' },
-    });
-
-    res.json(jobs.map((j) => ({
-      ...j,
-      applicantCount: j._count.applications,
-    })));
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 // Employer: Update job
-router.patch('/:id', authenticate, requireEmployer, async (req: AuthenticatedRequest, res, next) => {
-  try {
-    // Verify ownership
-    const employerProfile = await prisma.employerProfile.findUnique({
-      where: { userId: req.user!.id },
-    });
+router.patch(
+  '/:id',
+  authenticate,
+  requireEmployer,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      // Verify ownership
+      const employerProfile = await prisma.employerProfile.findUnique({
+        where: { userId: req.user!.id },
+      });
 
-    if (!employerProfile) {
-      res.status(400).json({ error: 'Employer profile required' });
-      return;
+      if (!employerProfile) {
+        res.status(400).json({ error: 'Employer profile required' });
+        return;
+      }
+
+      const existingJob = await prisma.job.findUnique({
+        where: { id: req.params.id as string },
+      });
+
+      if (!existingJob) {
+        res.status(404).json({ error: 'Job not found' });
+        return;
+      }
+
+      // Check ownership (only job owner or admin can update)
+      if (existingJob.employerId !== employerProfile.id && req.user!.role !== 'ADMIN') {
+        res.status(403).json({ error: 'Not authorized to update this job' });
+        return;
+      }
+
+      const job = await prisma.job.update({
+        where: { id: req.params.id as string },
+        data: req.body,
+      });
+      res.json(job);
+    } catch (error) {
+      next(error);
     }
-
-    const existingJob = await prisma.job.findUnique({
-      where: { id: req.params.id as string },
-    });
-
-    if (!existingJob) {
-      res.status(404).json({ error: 'Job not found' });
-      return;
-    }
-
-    // Check ownership (only job owner or admin can update)
-    if (existingJob.employerId !== employerProfile.id && req.user!.role !== 'ADMIN') {
-      res.status(403).json({ error: 'Not authorized to update this job' });
-      return;
-    }
-
-    const job = await prisma.job.update({
-      where: { id: req.params.id as string },
-      data: req.body,
-    });
-    res.json(job);
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 // Employer: Delete job
-router.delete('/:id', authenticate, requireEmployer, async (req: AuthenticatedRequest, res, next) => {
-  try {
-    // Verify ownership
-    const employerProfile = await prisma.employerProfile.findUnique({
-      where: { userId: req.user!.id },
-    });
+router.delete(
+  '/:id',
+  authenticate,
+  requireEmployer,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      // Verify ownership
+      const employerProfile = await prisma.employerProfile.findUnique({
+        where: { userId: req.user!.id },
+      });
 
-    if (!employerProfile) {
-      res.status(400).json({ error: 'Employer profile required' });
-      return;
+      if (!employerProfile) {
+        res.status(400).json({ error: 'Employer profile required' });
+        return;
+      }
+
+      const existingJob = await prisma.job.findUnique({
+        where: { id: req.params.id as string },
+      });
+
+      if (!existingJob) {
+        res.status(404).json({ error: 'Job not found' });
+        return;
+      }
+
+      // Check ownership (only job owner or admin can delete)
+      if (existingJob.employerId !== employerProfile.id && req.user!.role !== 'ADMIN') {
+        res.status(403).json({ error: 'Not authorized to delete this job' });
+        return;
+      }
+
+      await prisma.job.delete({ where: { id: req.params.id as string } });
+      res.status(204).send();
+    } catch (error) {
+      next(error);
     }
-
-    const existingJob = await prisma.job.findUnique({
-      where: { id: req.params.id as string },
-    });
-
-    if (!existingJob) {
-      res.status(404).json({ error: 'Job not found' });
-      return;
-    }
-
-    // Check ownership (only job owner or admin can delete)
-    if (existingJob.employerId !== employerProfile.id && req.user!.role !== 'ADMIN') {
-      res.status(403).json({ error: 'Not authorized to delete this job' });
-      return;
-    }
-
-    await prisma.job.delete({ where: { id: req.params.id as string } });
-    res.status(204).send();
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 export default router;

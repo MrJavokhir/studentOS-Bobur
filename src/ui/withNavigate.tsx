@@ -30,6 +30,7 @@ const screenToPath: Record<Screen, string> = {
   [Screen.ADMIN_SCHOLARSHIPS]: '/admin/scholarships',
   [Screen.ADMIN_ROLES]: '/admin/roles',
   [Screen.ADMIN_BLOG]: '/admin/blog',
+  [Screen.ADMIN_SETTINGS]: '/admin/settings',
 
   [Screen.EMPLOYER_DASHBOARD]: '/employer',
 };

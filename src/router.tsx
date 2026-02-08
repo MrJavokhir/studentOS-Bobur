@@ -39,17 +39,20 @@ const lazyRetry = (importFn: () => Promise<any>) => {
     try {
       return await importFn();
     } catch (error: any) {
-      if (error.message?.includes('Failed to fetch dynamically imported module') || error.name === 'ChunkLoadError') {
-         // Prevent infinite reload loop if the file is genuinely missing
-         const storageKey = `retry-${error.message}`;
-         const hasRetried = sessionStorage.getItem(storageKey);
-         
-         if (!hasRetried) {
-            sessionStorage.setItem(storageKey, 'true');
-            window.location.reload();
-            // Return a never-resolving promise to wait for reload
-            return new Promise(() => {});
-         }
+      if (
+        error.message?.includes('Failed to fetch dynamically imported module') ||
+        error.name === 'ChunkLoadError'
+      ) {
+        // Prevent infinite reload loop if the file is genuinely missing
+        const storageKey = `retry-${error.message}`;
+        const hasRetried = sessionStorage.getItem(storageKey);
+
+        if (!hasRetried) {
+          sessionStorage.setItem(storageKey, 'true');
+          window.location.reload();
+          // Return a never-resolving promise to wait for reload
+          return new Promise(() => {});
+        }
       }
       throw error;
     }
@@ -73,7 +76,9 @@ const Dashboard = withNavigate(lazyRetry(() => import('../components/Dashboard')
 const ScholarshipFinder = withNavigate(lazyRetry(() => import('../components/ScholarshipFinder')));
 const JobFinder = withNavigate(lazyRetry(() => import('../components/JobFinder')));
 const CVChecker = withNavigate(lazyRetry(() => import('../components/CVChecker')));
-const CoverLetterGenerator = withNavigate(lazyRetry(() => import('../components/CoverLetterGenerator')));
+const CoverLetterGenerator = withNavigate(
+  lazyRetry(() => import('../components/CoverLetterGenerator'))
+);
 const PresentationMaker = withNavigate(lazyRetry(() => import('../components/PresentationMaker')));
 const FinanceTracker = withNavigate(lazyRetry(() => import('../components/FinanceTracker')));
 const LearningPlan = withNavigate(lazyRetry(() => import('../components/LearningPlan')));
@@ -90,6 +95,7 @@ const AdminUsers = withNavigate(lazyRetry(() => import('../components/AdminUsers
 const AdminScholarships = withNavigate(lazyRetry(() => import('../components/AdminScholarships')));
 const AdminRoles = withNavigate(lazyRetry(() => import('../components/AdminRoles')));
 const AdminBlog = withNavigate(lazyRetry(() => import('../components/AdminBlog')));
+const AdminProfile = withNavigate(lazyRetry(() => import('../components/AdminProfile')));
 
 // Employer
 const EmployerDashboard = withNavigate(lazyRetry(() => import('../components/EmployerDashboard')));
@@ -363,6 +369,14 @@ export const router = createBrowserRouter([
         element: (
           <AdminRoute>
             <AdminBlog />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: '/admin/settings',
+        element: (
+          <AdminRoute>
+            <AdminProfile />
           </AdminRoute>
         ),
       },

@@ -96,7 +96,7 @@ router.get('/stats', async (req: AuthenticatedRequest, res, next) => {
 router.get('/analytics', async (req: AuthenticatedRequest, res, next) => {
   try {
     // Get daily user signups for the last 7 days
-    const userGrowth = [];
+    const userGrowth: any[] = [];
     for (let i = 6; i >= 0; i--) {
       const dayStart = new Date();
       dayStart.setDate(dayStart.getDate() - i);
@@ -159,7 +159,7 @@ router.get('/analytics', async (req: AuthenticatedRequest, res, next) => {
 
     res.json({
       userGrowth,
-      usersByRole: usersByRole.map(r => ({
+      usersByRole: usersByRole.map((r) => ({
         role: r.role,
         count: r._count,
       })),
@@ -176,7 +176,6 @@ router.get('/analytics', async (req: AuthenticatedRequest, res, next) => {
     next(error);
   }
 });
-
 
 // User management
 router.get('/users', async (req: AuthenticatedRequest, res, next) => {
