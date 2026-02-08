@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Screen, NavigationProps } from '../types';
 import { adminApi } from '../src/services/api';
 import { downloadCSV } from '../src/utils/csv';
+import { useAuth } from '../src/contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 interface AdminStats {
@@ -15,12 +17,28 @@ interface AdminStats {
 }
 
 export default function AdminDashboard({ navigateTo }: NavigationProps) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [isSidebarLocked, setIsSidebarLocked] = useState(true);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const hoverTimeoutRef = useRef<any>(null);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      toast.error('Logout failed. Please try again.');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   useEffect(() => {
     fetchStats();
@@ -217,12 +235,15 @@ export default function AdminDashboard({ navigateTo }: NavigationProps) {
               </div>
             </button>
             <button
-              onClick={() => navigateTo(Screen.SIGN_IN)}
-              className={`flex w-full items-center gap-2 rounded-lg bg-slate-100 dark:bg-white/5 p-2 text-sm font-semibold text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors ${!isSidebarExpanded ? 'justify-center' : 'justify-center'}`}
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className={`flex w-full items-center gap-2 rounded-lg bg-slate-100 dark:bg-white/5 p-2 text-sm font-semibold text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors ${!isSidebarExpanded ? 'justify-center' : 'justify-center'} ${isLoggingOut ? 'opacity-50 cursor-not-allowed' : ''}`}
               title={!isSidebarExpanded ? 'Logout' : ''}
             >
-              <span className="material-symbols-outlined text-lg">logout</span>
-              {isSidebarExpanded && <span>Logout</span>}
+              <span className="material-symbols-outlined text-lg">
+                {isLoggingOut ? 'hourglass_empty' : 'logout'}
+              </span>
+              {isSidebarExpanded && <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>}
             </button>
           </div>
         </div>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Screen, NavigationProps } from '../types';
 import { scholarshipApi } from '../src/services/api';
+import { useAuth } from '../src/contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 interface Scholarship {
@@ -64,6 +66,8 @@ const awardTypes = [
 ];
 
 export default function AdminScholarships({ navigateTo }: NavigationProps) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [scholarships, setScholarships] = useState<Scholarship[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -77,6 +81,20 @@ export default function AdminScholarships({ navigateTo }: NavigationProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({ total: 0, pages: 1 });
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      toast.error('Logout failed. Please try again.');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   useEffect(() => {
     fetchScholarships();
@@ -424,12 +442,15 @@ export default function AdminScholarships({ navigateTo }: NavigationProps) {
               </div>
             </button>
             <button
-              onClick={() => navigateTo(Screen.SIGN_IN)}
-              className={`flex w-full items-center gap-2 rounded-lg bg-slate-100 dark:bg-white/5 p-2 text-sm font-semibold text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors justify-center`}
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className={`flex w-full items-center gap-2 rounded-lg bg-slate-100 dark:bg-white/5 p-2 text-sm font-semibold text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors justify-center ${isLoggingOut ? 'opacity-50 cursor-not-allowed' : ''}`}
               title={!isSidebarExpanded ? 'Logout' : ''}
             >
-              <span className="material-symbols-outlined text-lg">logout</span>
-              {isSidebarExpanded && <span>Logout</span>}
+              <span className="material-symbols-outlined text-lg">
+                {isLoggingOut ? 'hourglass_empty' : 'logout'}
+              </span>
+              {isSidebarExpanded && <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>}
             </button>
           </div>
         </div>
