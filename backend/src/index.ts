@@ -18,6 +18,7 @@ import blogRoutes from './routes/blog.routes.js';
 import communityRoutes from './routes/community.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import aiRoutes from './routes/ai.routes.js';
+import aiGeneratorRoutes from './routes/ai-generator.routes.js';
 import financeRoutes from './routes/finance.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 
@@ -28,10 +29,12 @@ app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: env.FRONTEND_URL,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: env.FRONTEND_URL,
+    credentials: true,
+  })
+);
 
 // Rate limiting
 const limiter = rateLimit({
@@ -63,6 +66,7 @@ app.use('/api/community', communityRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/employer', employerRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/ai-generator', aiGeneratorRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/notifications', notificationRoutes);
 

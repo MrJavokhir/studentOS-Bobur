@@ -3,44 +3,96 @@ import { env } from '../config/env.js';
 
 const genAI = env.GEMINI_API_KEY ? new GoogleGenerativeAI(env.GEMINI_API_KEY) : null;
 
-export const analyzeCV = async (cvText: string, jobDescription?: string): Promise<{
+// Helper to handle Gemini API errors with user-friendly messages
+const handleGeminiError = (error: any): never => {
+  if (
+    error?.status === 429 ||
+    error?.message?.includes('429') ||
+    error?.message?.includes('quota')
+  ) {
+    throw new Error(
+      'AI_RATE_LIMIT: You have exceeded the AI request limit. Please wait a moment and try again.'
+    );
+  }
+  if (error?.message?.includes('API key')) {
+    throw new Error(
+      'AI_CONFIG_ERROR: AI service is not properly configured. Please contact support.'
+    );
+  }
+  throw error;
+};
+
+export const analyzeCV = async (
+  cvText: string,
+  jobDescription?: string
+): Promise<{
   score: number;
-  feedback: string[];
-  suggestions: string[];
-  keywords: { found: string[]; missing: string[] };
+  missing_keywords: string[];
+  weaknesses: string[];
+  actionable_fixes: string[];
+  // Keep legacy fields for backward compatibility
+  feedback?: string[];
+  suggestions?: string[];
+  keywords?: { found: string[]; missing: string[] };
 }> => {
   if (!genAI) {
-    throw new Error('Gemini API key not configured');
+    throw new Error('AI_CONFIG_ERROR: Gemini API key not configured');
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-  const prompt = `Analyze this CV/resume for ATS (Applicant Tracking System) compatibility.
-${jobDescription ? `Compare against this job description: ${jobDescription}` : ''}
+    const prompt = `Act as an expert Recruiter and ATS (Applicant Tracking System) algorithm. Analyze the following resume thoroughly.
+${jobDescription ? `Compare against this job description: ${jobDescription}` : 'Analyze for general job market compatibility.'}
 
-CV Content:
+Resume/CV Content:
 ${cvText}
 
-Provide a JSON response with:
-1. "score": ATS compatibility score from 0-100
-2. "feedback": Array of specific feedback points about the CV
-3. "suggestions": Array of improvement suggestions
-4. "keywords": Object with "found" (good keywords present) and "missing" (important keywords to add)
+Provide a strict JSON response with the following structure:
+{
+  "score": <number 0-100 representing ATS compatibility>,
+  "missing_keywords": ["keyword1", "keyword2", ...] // Important keywords that should be added,
+  "weaknesses": ["point 1", "point 2", ...] // Specific weaknesses in the resume,
+  "actionable_fixes": ["tip 1", "tip 2", ...] // Specific, actionable improvements
+}
 
-Respond ONLY with valid JSON, no markdown.`;
+Be thorough and specific. Return ONLY valid JSON, no markdown, no code blocks.`;
 
-  const result = await model.generateContent(prompt);
-  const response = result.response.text();
-  
-  try {
-    return JSON.parse(response);
-  } catch {
-    return {
-      score: 50,
-      feedback: ['Unable to parse AI response'],
-      suggestions: ['Please try again'],
-      keywords: { found: [], missing: [] },
-    };
+    const result = await model.generateContent(prompt);
+    const response = result.response.text();
+
+    try {
+      // Clean response of any markdown formatting
+      const cleanedResponse = response
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      const parsed = JSON.parse(cleanedResponse);
+
+      // Ensure all required fields exist
+      return {
+        score: parsed.score ?? 50,
+        missing_keywords: parsed.missing_keywords ?? [],
+        weaknesses: parsed.weaknesses ?? [],
+        actionable_fixes: parsed.actionable_fixes ?? [],
+        // Legacy compatibility
+        feedback: parsed.weaknesses ?? [],
+        suggestions: parsed.actionable_fixes ?? [],
+        keywords: { found: [], missing: parsed.missing_keywords ?? [] },
+      };
+    } catch {
+      return {
+        score: 50,
+        missing_keywords: [],
+        weaknesses: ['Unable to parse AI response'],
+        actionable_fixes: ['Please try again with a clearer CV format'],
+        feedback: ['Unable to parse AI response'],
+        suggestions: ['Please try again'],
+        keywords: { found: [], missing: [] },
+      };
+    }
+  } catch (error) {
+    return handleGeminiError(error);
   }
 };
 
@@ -107,7 +159,7 @@ Respond ONLY with valid JSON, no markdown.`;
 
   const result = await model.generateContent(prompt);
   const response = result.response.text();
-  
+
   try {
     return JSON.parse(response);
   } catch {
@@ -119,7 +171,9 @@ Respond ONLY with valid JSON, no markdown.`;
   }
 };
 
-export const checkPlagiarism = async (text: string): Promise<{
+export const checkPlagiarism = async (
+  text: string
+): Promise<{
   score: number;
   analysis: string;
   suggestions: string[];
@@ -145,7 +199,7 @@ Respond ONLY with valid JSON, no markdown.`;
 
   const result = await model.generateContent(prompt);
   const response = result.response.text();
-  
+
   try {
     return JSON.parse(response);
   } catch {
@@ -195,16 +249,14 @@ Respond ONLY with valid JSON, no markdown.`;
 
   const result = await model.generateContent(prompt);
   const response = result.response.text();
-  
+
   try {
     return JSON.parse(response);
   } catch {
     return {
       title: topic,
       author: '',
-      slides: [
-        { slideNumber: 1, title: topic, bulletPoints: ['Unable to generate content'] }
-      ],
+      slides: [{ slideNumber: 1, title: topic, bulletPoints: ['Unable to generate content'] }],
       theme: { primaryColor: '#4F46E5', accentColor: '#7C3AED' },
     };
   }
