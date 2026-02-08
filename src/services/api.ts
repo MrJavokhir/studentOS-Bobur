@@ -166,6 +166,12 @@ export const authApi = {
 
   onboarding: (data: any) =>
     api.post('/auth/onboarding', data),
+
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    api.post<{ message: string }>('/auth/change-password', data),
+
+  updateEmail: (data: { newEmail: string; password: string }) =>
+    api.post<{ message: string }>('/auth/update-email', data),
 };
 
 // User API

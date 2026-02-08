@@ -324,4 +324,104 @@ router.post('/onboarding', authenticate, validate(onboardingSchema), async (req:
   }
 });
 
+// Change password schema
+const changePasswordSchema = z.object({
+  body: z.object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z.string()
+      .min(10, 'Password must be at least 10 characters')
+      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+      .regex(/[0-9]/, 'Password must contain at least one number')
+      .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+  }),
+});
+
+// Change password
+router.post('/change-password', authenticate, validate(changePasswordSchema), async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    // Get user with password
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+    });
+
+    if (!user || !user.passwordHash) {
+      throw new AppError(404, 'User not found');
+    }
+
+    // Verify current password
+    const isValid = await comparePasswords(currentPassword, user.passwordHash);
+    if (!isValid) {
+      throw new AppError(401, 'Current password is incorrect');
+    }
+
+    // Hash new password
+    const newPasswordHash = await hashPassword(newPassword);
+
+    // Update password
+    await prisma.user.update({
+      where: { id: req.user!.id },
+      data: { passwordHash: newPasswordHash },
+    });
+
+    // Revoke all refresh tokens for security
+    await revokeAllUserTokens(req.user!.id);
+
+    res.json({ message: 'Password updated successfully. Please log in again.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update email schema
+const updateEmailSchema = z.object({
+  body: z.object({
+    newEmail: z.string().email('Invalid email'),
+    password: z.string().min(1, 'Password is required to confirm email change'),
+  }),
+});
+
+// Update email
+router.post('/update-email', authenticate, validate(updateEmailSchema), async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { newEmail, password } = req.body;
+
+    // Get user with password
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+    });
+
+    if (!user || !user.passwordHash) {
+      throw new AppError(404, 'User not found');
+    }
+
+    // Verify password
+    const isValid = await comparePasswords(password, user.passwordHash);
+    if (!isValid) {
+      throw new AppError(401, 'Password is incorrect');
+    }
+
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: newEmail },
+    });
+
+    if (existingUser) {
+      throw new AppError(409, 'Email is already in use');
+    }
+
+    // Update email
+    await prisma.user.update({
+      where: { id: req.user!.id },
+      data: { email: newEmail },
+    });
+
+    res.json({ message: 'Email updated successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
+

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Screen } from './types';
 import LandingPage from './components/LandingPage';
@@ -27,6 +26,7 @@ import AdminUsers from './components/AdminUsers';
 import AdminScholarships from './components/AdminScholarships';
 import AdminRoles from './components/AdminRoles';
 import AdminBlog from './components/AdminBlog';
+import AdminProfile from './components/AdminProfile';
 import EmployerDashboard from './components/EmployerDashboard';
 
 export default function App() {
@@ -40,87 +40,34 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col font-display">
-      {currentScreen === Screen.LANDING && (
-        <LandingPage navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.SIGNUP_STEP_1 && (
-        <SignUpStep1 navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.SIGNUP_STEP_2 && (
-        <SignUpStep2 navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.DASHBOARD && (
-        <Dashboard navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.SCHOLARSHIPS && (
-        <ScholarshipFinder navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.JOBS && (
-        <JobFinder navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.CV_ATS && (
-        <CVChecker navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.COVER_LETTER && (
-        <CoverLetterGenerator navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.PRESENTATION && (
-        <PresentationMaker navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.LEARNING_PLAN && (
-        <LearningPlan navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.PLAGIARISM && (
-        <PlagiarismChecker navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.FINANCE && (
-        <FinanceTracker navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.HABIT_TRACKER && (
-        <HabitTracker navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.COMMUNITY && (
-        <CommunityFeed navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.CONTACT && (
-        <ContactSupport navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.SIGN_IN && (
-        <SignIn navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.BLOG && (
-        <Blog navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.ABOUT && (
-        <AboutUs navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.PROFILE && (
-        <ProfileSettings navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.ADMIN_DASHBOARD && (
-        <AdminDashboard navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.ADMIN_EMPLOYERS && (
-        <AdminEmployers navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.ADMIN_PRICING && (
-        <AdminPricing navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.ADMIN_USERS && (
-        <AdminUsers navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.ADMIN_SCHOLARSHIPS && (
-        <AdminScholarships navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.ADMIN_ROLES && (
-        <AdminRoles navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.ADMIN_BLOG && (
-        <AdminBlog navigateTo={navigateTo} />
-      )}
-      {currentScreen === Screen.EMPLOYER_DASHBOARD && (
-        <EmployerDashboard navigateTo={navigateTo} />
-      )}
+      {currentScreen === Screen.LANDING && <LandingPage navigateTo={navigateTo} />}
+      {currentScreen === Screen.SIGNUP_STEP_1 && <SignUpStep1 navigateTo={navigateTo} />}
+      {currentScreen === Screen.SIGNUP_STEP_2 && <SignUpStep2 navigateTo={navigateTo} />}
+      {currentScreen === Screen.DASHBOARD && <Dashboard navigateTo={navigateTo} />}
+      {currentScreen === Screen.SCHOLARSHIPS && <ScholarshipFinder navigateTo={navigateTo} />}
+      {currentScreen === Screen.JOBS && <JobFinder navigateTo={navigateTo} />}
+      {currentScreen === Screen.CV_ATS && <CVChecker navigateTo={navigateTo} />}
+      {currentScreen === Screen.COVER_LETTER && <CoverLetterGenerator navigateTo={navigateTo} />}
+      {currentScreen === Screen.PRESENTATION && <PresentationMaker navigateTo={navigateTo} />}
+      {currentScreen === Screen.LEARNING_PLAN && <LearningPlan navigateTo={navigateTo} />}
+      {currentScreen === Screen.PLAGIARISM && <PlagiarismChecker navigateTo={navigateTo} />}
+      {currentScreen === Screen.FINANCE && <FinanceTracker navigateTo={navigateTo} />}
+      {currentScreen === Screen.HABIT_TRACKER && <HabitTracker navigateTo={navigateTo} />}
+      {currentScreen === Screen.COMMUNITY && <CommunityFeed navigateTo={navigateTo} />}
+      {currentScreen === Screen.CONTACT && <ContactSupport navigateTo={navigateTo} />}
+      {currentScreen === Screen.SIGN_IN && <SignIn navigateTo={navigateTo} />}
+      {currentScreen === Screen.BLOG && <Blog navigateTo={navigateTo} />}
+      {currentScreen === Screen.ABOUT && <AboutUs navigateTo={navigateTo} />}
+      {currentScreen === Screen.PROFILE && <ProfileSettings navigateTo={navigateTo} />}
+      {currentScreen === Screen.ADMIN_DASHBOARD && <AdminDashboard navigateTo={navigateTo} />}
+      {currentScreen === Screen.ADMIN_EMPLOYERS && <AdminEmployers navigateTo={navigateTo} />}
+      {currentScreen === Screen.ADMIN_PRICING && <AdminPricing navigateTo={navigateTo} />}
+      {currentScreen === Screen.ADMIN_USERS && <AdminUsers navigateTo={navigateTo} />}
+      {currentScreen === Screen.ADMIN_SCHOLARSHIPS && <AdminScholarships navigateTo={navigateTo} />}
+      {currentScreen === Screen.ADMIN_ROLES && <AdminRoles navigateTo={navigateTo} />}
+      {currentScreen === Screen.ADMIN_BLOG && <AdminBlog navigateTo={navigateTo} />}
+      {currentScreen === Screen.ADMIN_SETTINGS && <AdminProfile navigateTo={navigateTo} />}
+      {currentScreen === Screen.EMPLOYER_DASHBOARD && <EmployerDashboard navigateTo={navigateTo} />}
     </div>
   );
 }
