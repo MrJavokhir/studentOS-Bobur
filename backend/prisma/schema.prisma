@@ -159,23 +159,27 @@ model EmployerProfile {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  companyName String
-  tagline     String?
-  description String?
-  industry    String?
-  companySize String?
-  logoUrl     String?
-  website     String?
-  linkedIn    String?
-  address     String?
-  city        String?
-  state       String?
-  country     String?
+  companyName        String
+  tagline            String?
+  description        String?
+  industry           String?
+  companySize        String?
+  logoUrl            String?
+  website            String?
+  linkedIn           String?
+  address            String?
+  city               String?
+  state              String?
+  country            String?
+  verificationStatus String   @default("pending") // verified, pending, rejected
+  isFeatured         Boolean  @default(false)
 
   jobs Job[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([verificationStatus])
 }
 
 model RefreshToken {

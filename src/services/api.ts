@@ -376,7 +376,28 @@ export const adminApi = {
   },
   updateUser: (id: string, data: any) => api.patch(`/admin/users/${id}`, data),
   deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
-  getEmployers: () => api.get('/admin/employers'),
+  getEmployerStats: () => api.get('/admin/employers/stats'),
+  getEmployers: (params?: Record<string, string | number | undefined>) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          searchParams.append(key, String(value));
+        }
+      });
+    }
+    return api.get(`/admin/employers?${searchParams}`);
+  },
+  createEmployer: (data: {
+    email: string;
+    companyName: string;
+    industry?: string;
+    website?: string;
+    repName?: string;
+  }) => api.post('/admin/employers', data),
+  updateEmployer: (id: string, data: Record<string, unknown>) =>
+    api.patch(`/admin/employers/${id}`, data),
+  deleteEmployer: (id: string) => api.delete(`/admin/employers/${id}`),
   getPricing: () => api.get('/admin/pricing'),
   createPricing: (data: any) => api.post('/admin/pricing', data),
   updatePricing: (id: string, data: any) => api.patch(`/admin/pricing/${id}`, data),

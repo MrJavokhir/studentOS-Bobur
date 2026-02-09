@@ -308,18 +308,176 @@ router.delete('/users/:id', async (req: AuthenticatedRequest, res, next) => {
   }
 });
 
-// Employer management
+// Employer management - Stats
+router.get('/employers/stats', async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const [totalEmployers, pendingApprovals, activeVacancies, featuredPartners] = await Promise.all(
+      [
+        prisma.employerProfile.count(),
+        prisma.employerProfile.count({ where: { verificationStatus: 'pending' } }),
+        prisma.job.count({ where: { status: 'ACTIVE' } }),
+        prisma.employerProfile.count({ where: { isFeatured: true } }),
+      ]
+    );
+
+    res.json({ totalEmployers, pendingApprovals, activeVacancies, featuredPartners });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Employer management - List with search and filters
 router.get('/employers', async (req: AuthenticatedRequest, res, next) => {
   try {
-    const employers = await prisma.employerProfile.findMany({
+    const { search, status, industry, page = '1', limit = '20' } = req.query as any;
+
+    const where: any = {};
+    if (status) where.verificationStatus = status;
+    if (industry) where.industry = industry;
+    if (search) {
+      where.OR = [
+        { companyName: { contains: search, mode: 'insensitive' } },
+        { industry: { contains: search, mode: 'insensitive' } },
+        { user: { email: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [employers, total] = await Promise.all([
+      prisma.employerProfile.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              email: true,
+              isActive: true,
+              createdAt: true,
+              studentProfile: { select: { fullName: true } },
+            },
+          },
+          _count: { select: { jobs: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (parseInt(page) - 1) * parseInt(limit),
+        take: parseInt(limit),
+      }),
+      prisma.employerProfile.count({ where }),
+    ]);
+
+    // Get unique industries for filter dropdown
+    const industries = await prisma.employerProfile.findMany({
+      where: { industry: { not: null } },
+      select: { industry: true },
+      distinct: ['industry'],
+    });
+
+    res.json({
+      employers,
+      industries: industries.map((i) => i.industry).filter(Boolean),
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit)),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Employer management - Create
+router.post('/employers', async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { email, companyName, industry, website, repName } = req.body;
+
+    // Create user with EMPLOYER role
+    const passwordHash = await hashPassword('TempPass123!');
+    const user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        role: 'EMPLOYER',
+        employerProfile: {
+          create: {
+            companyName,
+            industry: industry || null,
+            website: website || null,
+            verificationStatus: 'pending',
+          },
+        },
+        studentProfile: {
+          create: {
+            fullName: repName || null,
+          },
+        },
+      },
+      include: {
+        employerProfile: true,
+      },
+    });
+
+    await logAdminAction(req, 'CREATE_EMPLOYER', 'EMPLOYER', user.employerProfile!.id, {
+      email,
+      companyName,
+    });
+
+    res.status(201).json(user.employerProfile);
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      res.status(409).json({ error: 'An account with this email already exists' });
+      return;
+    }
+    next(error);
+  }
+});
+
+// Employer management - Update
+router.patch('/employers/:id', async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { companyName, industry, website, verificationStatus, isFeatured } = req.body;
+
+    const employer = await prisma.employerProfile.update({
+      where: { id: req.params.id as string },
+      data: {
+        ...(companyName !== undefined && { companyName }),
+        ...(industry !== undefined && { industry }),
+        ...(website !== undefined && { website }),
+        ...(verificationStatus !== undefined && { verificationStatus }),
+        ...(isFeatured !== undefined && { isFeatured }),
+      },
       include: {
         user: { select: { email: true, isActive: true, createdAt: true } },
         _count: { select: { jobs: true } },
       },
-      orderBy: { createdAt: 'desc' },
     });
 
-    res.json(employers);
+    await logAdminAction(req, 'UPDATE_EMPLOYER', 'EMPLOYER', employer.id, req.body);
+
+    res.json(employer);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Employer management - Delete
+router.delete('/employers/:id', async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const employer = await prisma.employerProfile.findUnique({
+      where: { id: req.params.id as string },
+      select: { userId: true },
+    });
+
+    if (!employer) {
+      res.status(404).json({ error: 'Employer not found' });
+      return;
+    }
+
+    // Delete the user (cascades to employer profile)
+    await prisma.user.delete({ where: { id: employer.userId } });
+
+    await logAdminAction(req, 'DELETE_EMPLOYER', 'EMPLOYER', req.params.id as string);
+
+    res.status(204).send();
   } catch (error) {
     next(error);
   }
