@@ -255,11 +255,13 @@ export const scholarshipApi = {
 
 // Jobs API
 export const jobApi = {
-  list: (params?: { search?: string; locationType?: string; page?: number }) => {
+  list: (params?: Record<string, string | number | undefined>) => {
     const searchParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
-        if (value) searchParams.append(key, String(value));
+        if (value !== undefined && value !== null && value !== '') {
+          searchParams.append(key, String(value));
+        }
       });
     }
     return api.get(`/jobs?${searchParams}`);

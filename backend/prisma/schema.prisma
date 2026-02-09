@@ -49,6 +49,12 @@ enum JobStatus {
   CLOSED
 }
 
+enum JobType {
+  INTERNSHIP
+  PART_TIME
+  FULL_TIME
+}
+
 enum BlogStatus {
   DRAFT
   PUBLISHED
@@ -236,6 +242,7 @@ model Job {
   company          String
   location         String?
   locationType     LocationType @default(ONSITE)
+  jobType          JobType      @default(FULL_TIME)
   salaryMin        Int?
   salaryMax        Int?
   salaryType       String?      @default("yearly")
@@ -258,6 +265,7 @@ model Job {
 
   @@index([status])
   @@index([locationType])
+  @@index([jobType])
   @@index([employerId])
 }
 

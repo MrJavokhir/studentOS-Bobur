@@ -18,6 +18,7 @@ router.get(
       const {
         search,
         locationType,
+        jobType,
         minSalary,
         maxSalary,
         department,
@@ -30,6 +31,7 @@ router.get(
       };
 
       if (locationType) where.locationType = locationType;
+      if (jobType) where.jobType = jobType;
       if (department) where.department = department;
       if (minSalary) where.salaryMin = { gte: parseInt(minSalary) };
       if (maxSalary) where.salaryMax = { lte: parseInt(maxSalary) };
