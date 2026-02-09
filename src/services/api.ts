@@ -476,3 +476,67 @@ export const employerApi = {
     return api.get(`/employer/applications?${searchParams}`);
   },
 };
+
+// Credits API (Credit System)
+export const creditsApi = {
+  // Get user's credit balance
+  getBalance: () =>
+    api.get<{ success: boolean; data: { balance: number; referralCode: string | null } }>(
+      '/credits/balance'
+    ),
+
+  // Use credits for a tool (atomic deduction)
+  useCredits: (toolSlug: string) =>
+    api.post<{
+      success: boolean;
+      error?: string;
+      data?: {
+        toolName: string;
+        creditCost: number;
+        remainingBalance: number | null;
+        usageId?: string;
+        message: string;
+        required?: number;
+        available?: number;
+        shortfall?: number;
+      };
+    }>('/credits/use', { toolSlug }),
+
+  // Get usage history
+  getHistory: (params?: { page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) searchParams.append(key, String(value));
+      });
+    }
+    return api.get<{
+      success: boolean;
+      data: {
+        history: Array<{
+          id: string;
+          tool: { name: string; slug: string; icon: string; category: string };
+          credits: number;
+          usedAt: string;
+        }>;
+        pagination: { page: number; limit: number; total: number; totalPages: number };
+      };
+    }>(`/credits/history?${searchParams}`);
+  },
+
+  // Get tool info (credit cost preview)
+  getTool: (slug: string) =>
+    api.get<{
+      success: boolean;
+      data: {
+        id: string;
+        name: string;
+        slug: string;
+        description: string | null;
+        creditCost: number;
+        isActive: boolean;
+        icon: string | null;
+        category: string;
+      };
+    }>(`/credits/tool/${slug}`),
+};

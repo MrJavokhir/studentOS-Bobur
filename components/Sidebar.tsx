@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Screen } from '../types';
 import { STUDENT_NAV_ITEMS } from '../src/config/navigation';
 import { useAuth } from '../src/contexts/AuthContext';
+import { useCredits } from '../src/contexts/CreditContext';
 
 interface SidebarProps {
   currentScreen: Screen;
@@ -19,9 +20,10 @@ interface SidebarProps {
 export default function Sidebar({ currentScreen, navigateTo, userData }: SidebarProps) {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { balance, isLoading: isLoadingCredits } = useCredits();
   const [isSidebarLocked, setIsSidebarLocked] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  const hoverTimeoutRef = useRef<any>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
@@ -96,7 +98,17 @@ export default function Sidebar({ currentScreen, navigateTo, userData }: Sidebar
             <h1 className="text-lg font-bold leading-none tracking-tight whitespace-nowrap">
               StudentOS
             </h1>
-            <p className="text-xs text-text-sub font-medium mt-1 whitespace-nowrap">Pro Plan</p>
+            <p className="text-xs text-text-sub font-medium mt-1 whitespace-nowrap flex items-center gap-1">
+              {isLoadingCredits ? (
+                <span className="animate-pulse">Loading...</span>
+              ) : (
+                <>
+                  <span className="text-sm">💎</span>
+                  <span className="font-semibold text-primary">{balance.toLocaleString()}</span>
+                  <span>Credits</span>
+                </>
+              )}
+            </p>
           </div>
         </div>
 

@@ -7,6 +7,7 @@ import { Toaster } from 'react-hot-toast';
 import { router } from './src/router';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import { AuthProvider } from './src/contexts/AuthContext';
+import { CreditProvider } from './src/contexts/CreditContext';
 
 const queryClient = new QueryClient();
 
@@ -20,7 +21,9 @@ ReactDOM.createRoot(rootElement).render(
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <RouterProvider router={router} />
+          <CreditProvider>
+            <RouterProvider router={router} />
+          </CreditProvider>
         </AuthProvider>
         <Toaster position="top-right" />
       </QueryClientProvider>
