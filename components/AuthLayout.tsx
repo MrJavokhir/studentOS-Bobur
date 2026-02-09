@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import ParticlesBackground from './ParticlesBackground';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -42,7 +41,9 @@ export default function AuthLayout({
         <div className="flex-1 flex items-center justify-center px-6 lg:px-16 py-8">
           <div className="w-full max-w-md">
             {/* Title */}
-            <h1 className="text-4xl lg:text-5xl font-serif italic text-slate-900 mb-2">{title}</h1>
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 mb-2">
+              {title}
+            </h1>
             {subtitle && <p className="text-slate-500 mb-8">{subtitle}</p>}
 
             {/* Form Content */}
@@ -93,26 +94,56 @@ export default function AuthLayout({
       </div>
 
       {/* Right Panel - Visual Showcase */}
-      <div className="hidden lg:block lg:w-[55%] relative overflow-hidden bg-slate-900">
-        {/* Background Gradient - Deep Space / Cyber */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-[#0f172a] to-[#1e1b4b]" />
+      <div className="hidden lg:block lg:w-[55%] relative overflow-hidden bg-white">
+        {/* Background Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-indigo-50" />
 
-        {/* Abstract Network Visualization */}
-        <div className="absolute inset-0 z-0">
-          <ParticlesBackground />
-        </div>
-
-        {/* Overlay Content (Optional Text/Logo) */}
-        <div className="absolute inset-0 z-10 flex flex-col justify-end p-16 pointer-events-none">
-          <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10 shadow-2xl animate-fade-in-up">
-            <h2 className="text-3xl font-bold text-white mb-4">
-              Your Future, <span className="text-blue-400">Connected.</span>
-            </h2>
-            <p className="text-blue-100 text-lg leading-relaxed">
-              Join the network where students, opportunities, and AI intelligence converge to build
-              your career.
-            </p>
+        {/* Animated Icons Container */}
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Icon 1: Graduation Cap (Top Left) */}
+          <div
+            className="absolute top-[15%] left-[10%] opacity-20 text-indigo-300 animate-float-slow"
+            style={{ animationDelay: '0s' }}
+          >
+            <svg width="140" height="140" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18L12 21L19 17.18V13.18L12 17L5 13.18Z" />
+            </svg>
           </div>
+
+          {/* Icon 2: Open Book (Top Right) */}
+          <div
+            className="absolute top-[20%] right-[15%] opacity-20 text-blue-300 animate-float-medium"
+            style={{ animationDelay: '1s' }}
+          >
+            <svg width="120" height="120" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 1L14 6V17L19 12V1Z" />
+              <path d="M21 5C19.89 4.65 18.58 4.65 18 4.65C16.89 4.65 15.58 4.65 13.5 5.25V19.85C13.5 19.95 13.59 19.99 13.68 19.96C15.68 19.4 17.18 19.4 18 19.4C19.24 19.4 20.64 19.65 22.25 20.35C22.68 20.53 23 20.14 23 19.7V5.65C23 5.3 22.4 5 21 5Z" />
+              <path d="M10.5 5.25C8.42 4.65 7.11 4.65 6 4.65C5.42 4.65 4.11 4.65 3 5C1.6 5 1 5.3 1 5.65V19.7C1 20.14 1.32 20.53 1.75 20.35C3.36 19.65 4.76 19.4 6 19.4C6.82 19.4 8.32 19.4 10.32 19.96C10.41 19.99 10.5 19.95 10.5 19.85V5.25Z" />
+            </svg>
+          </div>
+
+          {/* Icon 3: Lightbulb (Bottom Left) */}
+          <div
+            className="absolute bottom-[20%] left-[12%] opacity-20 text-amber-200 animate-float-fast"
+            style={{ animationDelay: '2s' }}
+          >
+            <svg width="130" height="130" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9 21C9 21.55 9.45 22 10 22H14C14.55 22 15 21.55 15 21V20H9V21ZM12 2C8.14 2 5 5.14 5 9C5 11.38 6.19 13.47 8 14.74V17C8 17.55 8.45 18 9 18H15C15.55 18 16 17.55 16 17V14.74C17.81 13.47 19 11.38 19 9C19 5.14 15.86 2 12 2ZM14.85 13.1L14.4 13.42L14 13.7V16H10V13.7L9.6 13.42C8.01 12.33 7 10.65 7 9C7 6.24 9.24 4 12 4C14.76 4 17 6.24 17 9C17 10.65 16 12.33 14.85 13.1Z" />
+            </svg>
+          </div>
+
+          {/* Icon 4: Pencil/Ruler (Bottom Right) */}
+          <div
+            className="absolute bottom-[25%] right-[10%] opacity-20 text-emerald-200 animate-float-slow"
+            style={{ animationDelay: '3s' }}
+          >
+            <svg width="110" height="110" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25ZM20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" />
+            </svg>
+          </div>
+
+          {/* Optional: Central Glow */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-100/50 rounded-full blur-3xl animate-pulse" />
         </div>
       </div>
 
