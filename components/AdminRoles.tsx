@@ -279,20 +279,51 @@ function AdminRoles({ navigateTo }: NavigationProps) {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  // Sidebar props
+  // Sidebar Items with SVG paths
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊', screen: Screen.ADMIN_DASHBOARD },
-    { id: 'employers', label: 'Employers', icon: '🏢', screen: Screen.ADMIN_EMPLOYERS },
-    { id: 'pricing', label: 'Pricing', icon: '💳', screen: Screen.ADMIN_PRICING },
-    { id: 'users', label: 'Users', icon: '👥', screen: Screen.ADMIN_USERS },
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      screen: Screen.ADMIN_DASHBOARD,
+      path: 'M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM14 13a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z',
+    },
+    {
+      id: 'employers',
+      label: 'Employers',
+      screen: Screen.ADMIN_EMPLOYERS,
+      path: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+    },
+    {
+      id: 'pricing',
+      label: 'Pricing',
+      screen: Screen.ADMIN_PRICING,
+      path: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+    },
+    {
+      id: 'users',
+      label: 'Users',
+      screen: Screen.ADMIN_USERS,
+      path: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+    },
+    {
+      id: 'scholarships',
+      label: 'Scholarships',
+      screen: Screen.ADMIN_SCHOLARSHIPS,
+      path: 'M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5',
+    },
+    {
+      id: 'blog',
+      label: 'Blog Management',
+      screen: Screen.ADMIN_BLOG,
+      path: 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z',
+    },
     {
       id: 'roles',
       label: 'Roles & Permissions',
-      icon: '🔐',
       screen: Screen.ADMIN_ROLES,
       active: true,
+      path: 'M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z',
     },
-    { id: 'settings', label: 'Settings', icon: '⚙️', screen: Screen.ADMIN_SETTINGS },
   ];
 
   // Paginated users
@@ -332,10 +363,20 @@ function AdminRoles({ navigateTo }: NavigationProps) {
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
-              <span className={`text-lg ${item.active ? 'text-blue-600' : 'text-gray-400'}`}>
-                {item.icon}
-              </span>
-              <span className="text-sm">{item.label}</span>
+              <svg
+                className={`w-5 h-5 ${item.active ? 'text-blue-600' : 'text-gray-500'}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d={item.path}
+                />
+              </svg>
+              <span className="text-sm font-medium">{item.label}</span>
             </button>
           ))}
         </nav>
@@ -352,19 +393,21 @@ function AdminRoles({ navigateTo }: NavigationProps) {
               <p className="text-gray-900 font-medium text-sm truncate">
                 {user?.profile?.fullName || 'Jane Doe'}
               </p>
-              <p className="text-gray-500 text-xs">Super Admin</p>
+              <p className="text-gray-500 text-xs text-blue-500 hover:text-blue-700 cursor-pointer">
+                Profile Settings
+              </p>
             </div>
           </div>
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-2 py-2 mt-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm"
+            className="w-full flex items-center gap-2 px-2 py-2 mt-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth={2}
+                strokeWidth={1.5}
                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
               />
             </svg>
@@ -402,6 +445,7 @@ function AdminRoles({ navigateTo }: NavigationProps) {
           </div>
         </div>
 
+        {/* ... Rest of the file remains same ... */}
         {loading ? (
           <div className="flex items-center justify-center h-96">
             <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-100 border-t-[#4361EE]"></div>
@@ -701,7 +745,6 @@ function AdminRoles({ navigateTo }: NavigationProps) {
       </main>
 
       {/* Modals - Clean White Theme */}
-
       {/* Create Role Modal */}
       {showCreateRoleModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
