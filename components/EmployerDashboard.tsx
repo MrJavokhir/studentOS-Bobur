@@ -15,7 +15,7 @@ interface EmployerStats {
 
 export default function EmployerDashboard({ navigateTo }: NavigationProps) {
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'students' | 'company' | 'settings' | 'jobs'
+    'dashboard' | 'students' | 'company' | 'jobs' | 'profile'
   >('dashboard');
   const [stats, setStats] = useState<EmployerStats | null>(null);
   const [recentApps, setRecentApps] = useState<any[]>([]);
@@ -271,39 +271,33 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                   Company Profile
                 </span>
               </button>
-
-              <button
-                onClick={() => setActiveTab('settings')}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${activeTab === 'settings' ? 'bg-primary/10 text-primary dark:text-white dark:bg-primary/20' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'}`}
-              >
-                <span
-                  className={`material-symbols-outlined text-[20px] ${activeTab === 'settings' ? 'fill-1' : ''}`}
-                >
-                  settings
-                </span>
-                <span
-                  className={`text-sm ${activeTab === 'settings' ? 'font-semibold' : 'font-medium'}`}
-                >
-                  Settings
-                </span>
-              </button>
             </nav>
           </div>
 
           <div className="flex flex-col gap-4 border-t border-slate-100 dark:border-slate-800 pt-4">
-            <div className="flex items-center gap-3 px-2">
-              <div className="h-9 w-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-sm border-2 border-white dark:border-slate-700 shadow-sm">
-                HR
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`flex items-center gap-3 px-2 py-2 rounded-lg transition-all cursor-pointer ${activeTab === 'profile' ? 'bg-primary/10' : 'hover:bg-slate-50 dark:hover:bg-white/5'}`}
+            >
+              <div
+                className={`h-9 w-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-sm border-2 ${activeTab === 'profile' ? 'border-primary' : 'border-white dark:border-slate-700'} shadow-sm`}
+              >
+                {getInitials(company.companyName || 'HR')}
               </div>
-              <div className="flex flex-col overflow-hidden">
-                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                  TechFlow HR
+              <div className="flex flex-col overflow-hidden text-left">
+                <p
+                  className={`text-sm font-bold truncate ${activeTab === 'profile' ? 'text-primary' : 'text-slate-900 dark:text-white'}`}
+                >
+                  {company.companyName || 'TechFlow HR'}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                   Hiring Manager
                 </p>
               </div>
-            </div>
+              <span className="material-symbols-outlined text-[16px] text-slate-400 ml-auto">
+                chevron_right
+              </span>
+            </button>
             <button
               onClick={() => navigateTo(Screen.SIGN_IN)}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-50 dark:bg-white/5 p-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
@@ -1349,196 +1343,196 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
             </div>
           )}
 
-          {activeTab === 'settings' && (
+          {activeTab === 'profile' && (
             <div className="max-w-4xl mx-auto">
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                  Employer Account Settings
-                </h2>
-                <p className="text-slate-500 dark:text-slate-400">
-                  Manage your personal information and security preferences.
-                </p>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                    Profile Settings
+                  </h2>
+                  <p className="text-slate-500 dark:text-slate-400 mt-1">
+                    Manage your account and security preferences
+                  </p>
+                </div>
               </div>
 
-              <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-                {/* Personal Info Card */}
-                <div className="bg-white dark:bg-card-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                  <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
-                    <h3 className="font-bold text-slate-900 dark:text-white">
-                      Personal Information
-                    </h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                      Update your photo and personal details here.
-                    </p>
-                  </div>
-                  <div className="p-6 space-y-6">
-                    {/* Photo */}
-                    <div className="flex items-center gap-6">
-                      <div className="relative group">
-                        <div className="w-20 h-20 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden border-2 border-white dark:border-slate-600 shadow-sm">
-                          <img
-                            alt="Profile"
-                            className="w-full h-full object-cover"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgpCl8l0S9hceP4XWyZr3ckYiPPT0jnv-Jkh7E02HLQSd_o7ddFaftnc_8GBom4DK8xaBFaAkg3P5mMPJFm1SoGXF_aUlP6lGw9obItvgBPAsrl_DjUn_ETtYCf70TomtcCzDl14aBfsX0D7YWi4UqOa-WobZUvFae7748s-sI0Rja19Rau6rMsrL-E9s9g-aRHpKruXbuOD-UT3uCkAluvIo-GXeLsM0Paq_RQKxN60g9OXnV3NuEjiC16n1ayQAKwrnRL1BZhWw"
-                          />
+              {/* Profile Information Card */}
+              <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-6">
+                <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary">person</span>
+                    Profile Information
+                  </h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    Update your profile details visible to applicants
+                  </p>
+                </div>
+                <div className="p-6">
+                  <div className="flex flex-col md:flex-row gap-8">
+                    {/* Avatar Section */}
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="relative">
+                        <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-3xl border-4 border-white dark:border-slate-700 shadow-lg">
+                          {getInitials(company.companyName || 'HR')}
                         </div>
-                        <button
-                          type="button"
-                          className="absolute bottom-0 right-0 bg-primary hover:bg-primary-dark text-white p-1.5 rounded-full shadow-md transition-colors border-2 border-white dark:border-card-dark"
-                        >
-                          <span className="material-symbols-outlined text-[14px] block">edit</span>
+                        <button className="absolute -bottom-1 -right-1 p-2 bg-white dark:bg-slate-800 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                          <span className="material-symbols-outlined text-[18px] text-slate-600 dark:text-slate-300">
+                            photo_camera
+                          </span>
                         </button>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">
-                          Profile Photo
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                          Accepts JPG, GIF or PNG. Max size of 800K
-                        </p>
-                      </div>
+                      <button className="text-sm font-medium text-primary hover:text-primary-dark transition-colors">
+                        Change Photo
+                      </button>
                     </div>
-                    {/* Fields */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    {/* Form Fields */}
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div>
-                        <label
-                          className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1"
-                          htmlFor="firstName"
-                        >
-                          First Name
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                          Full Name
                         </label>
                         <input
-                          className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5"
-                          id="firstName"
                           type="text"
-                          defaultValue="Sarah"
+                          placeholder="Your full name"
+                          defaultValue="John Smith"
+                          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                         />
                       </div>
                       <div>
-                        <label
-                          className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1"
-                          htmlFor="lastName"
-                        >
-                          Last Name
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                          Company Name
                         </label>
                         <input
-                          className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5"
-                          id="lastName"
                           type="text"
-                          defaultValue="Wilson"
+                          value={company.companyName || ''}
+                          onChange={handleCompanyChange}
+                          id="companyName"
+                          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                         />
                       </div>
                       <div className="md:col-span-2">
-                        <label
-                          className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1"
-                          htmlFor="email"
-                        >
-                          Email Address
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                          Job Title
                         </label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                            <span className="material-symbols-outlined text-[18px]">mail</span>
-                          </div>
-                          <input
-                            className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 shadow-sm text-sm p-2.5 pl-10 cursor-not-allowed"
-                            disabled
-                            readOnly
-                            type="email"
-                            defaultValue="sarah.wilson@techflow.com"
-                          />
-                        </div>
-                        <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                          Contact support to change your email address.
-                        </p>
+                        <input
+                          type="text"
+                          placeholder="e.g. Hiring Manager, HR Director"
+                          defaultValue="Hiring Manager"
+                          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                        />
                       </div>
                     </div>
+                  </div>
+                  <div className="flex justify-end mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      onClick={() => {
+                        updateCompanyProfile();
+                        toast.success('Profile updated successfully!');
+                      }}
+                      className="px-6 py-2.5 rounded-lg bg-primary text-white font-bold hover:bg-primary-dark transition-colors shadow-lg shadow-primary/30"
+                    >
+                      Save Profile
+                    </button>
                   </div>
                 </div>
+              </div>
 
-                {/* Security Card */}
-                <div className="bg-white dark:bg-card-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                  <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
-                    <h3 className="font-bold text-slate-900 dark:text-white">Security</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                      Ensure your account is secure by using a strong password.
+              {/* Security Settings Card */}
+              <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary">lock</span>
+                    Security Settings
+                  </h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    Manage your password and account security
+                  </p>
+                </div>
+                <div className="p-6">
+                  {/* Email Display */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Email Address
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="email"
+                        value="hr@techflow.com"
+                        disabled
+                        className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+                      />
+                      <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs font-bold">
+                        Verified
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
+                      Contact support to change your email address
                     </p>
                   </div>
-                  <div className="p-6 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="md:col-span-2">
-                        <label
-                          className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1"
-                          htmlFor="currentPassword"
-                        >
-                          Current Password
-                        </label>
-                        <input
-                          className="w-full md:w-1/2 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5"
-                          id="currentPassword"
-                          type="password"
-                        />
-                      </div>
+
+                  {/* Password Change */}
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
+                    <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4">
+                      Change Password
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label
-                          className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1"
-                          htmlFor="newPassword"
-                        >
+                        <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">
                           New Password
                         </label>
                         <input
-                          className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5"
-                          id="newPassword"
                           type="password"
+                          placeholder="Enter new password"
+                          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                         />
                       </div>
                       <div>
-                        <label
-                          className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1"
-                          htmlFor="confirmPassword"
-                        >
+                        <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">
                           Confirm New Password
                         </label>
                         <input
-                          className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm p-2.5"
-                          id="confirmPassword"
                           type="password"
+                          placeholder="Confirm new password"
+                          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                         />
                       </div>
                     </div>
+                    <div className="flex justify-end mt-6">
+                      <button
+                        onClick={() => toast.success('Password updated successfully!')}
+                        className="px-6 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                      >
+                        Update Password
+                      </button>
+                    </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Action Buttons */}
-                <div className="flex items-center justify-between pt-4">
-                  <button
-                    className="flex items-center justify-center px-4 py-2 border border-slate-200 dark:border-slate-700 shadow-sm text-sm font-bold rounded-lg text-red-600 dark:text-red-400 bg-white dark:bg-card-dark hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                    type="button"
-                    onClick={() => navigateTo(Screen.SIGN_IN)}
-                  >
-                    <span className="material-symbols-outlined text-[18px] mr-2">logout</span>
-                    Log out
-                  </button>
-                  <div className="flex items-center gap-3">
-                    <button
-                      className="px-4 py-2 border border-slate-200 dark:border-slate-700 shadow-sm text-sm font-bold rounded-lg text-slate-700 dark:text-white bg-white dark:bg-card-dark hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
-                      type="button"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="px-6 py-2 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-primary hover:bg-primary-dark transition-colors shadow-primary/30"
-                      type="submit"
-                    >
-                      Save Changes
-                    </button>
+              {/* Danger Zone */}
+              <div className="mt-6 p-6 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/30">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30">
+                    <span className="material-symbols-outlined text-red-600 dark:text-red-400">
+                      warning
+                    </span>
                   </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-red-800 dark:text-red-300">Danger Zone</h4>
+                    <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                      Once you delete your account, there is no going back. Please be certain.
+                    </p>
+                  </div>
+                  <button className="px-4 py-2 rounded-lg border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 font-bold text-sm hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                    Delete Account
+                  </button>
                 </div>
-              </form>
+              </div>
 
               <div className="text-center pt-8 pb-4">
                 <p className="text-xs text-slate-400 dark:text-slate-500">
-                  Protected by StudentOS Security. Changes will be reflected across your employer
-                  profile immediately.
+                  Protected by StudentOS Security. Your data is encrypted and secure.
                 </p>
               </div>
             </div>
