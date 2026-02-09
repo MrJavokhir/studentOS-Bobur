@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Screen, NavigationProps } from '../types';
 import { authApi } from '../src/services/api';
 import { signInWithGoogle, isSupabaseConfigured } from '../src/lib/supabase';
 import toast from 'react-hot-toast';
+import AuthLayout from './AuthLayout';
 
 export default function SignUpStep1({ navigateTo }: NavigationProps) {
   const navigate = useNavigate();
@@ -15,6 +16,8 @@ export default function SignUpStep1({ navigateTo }: NavigationProps) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleGoogleSignUp = async () => {
     if (!isSupabaseConfigured()) {
@@ -27,7 +30,6 @@ export default function SignUpStep1({ navigateTo }: NavigationProps) {
     setError('');
     try {
       await signInWithGoogle();
-      // The user will be redirected to Google, then back to /auth/callback
     } catch (err) {
       console.error('[SignUp] Google signup error:', err);
       const message = err instanceof Error ? err.message : 'Failed to sign up with Google';
@@ -69,276 +71,331 @@ export default function SignUpStep1({ navigateTo }: NavigationProps) {
 
     setIsLoading(true);
 
-    try {
-      console.log('[SignUp] Submitting registration for:', email);
-      const { data, error: apiError } = await authApi.register({ email, password, fullName });
+    const { data, error: apiError } = await authApi.register({
+      email,
+      password,
+      fullName,
+    });
 
-      if (apiError) {
-        console.error('[SignUp] Registration error:', apiError);
-        setError(apiError);
-        toast.error(apiError);
-        setIsLoading(false);
-        return;
-      }
-
-      if (data) {
-        console.log('[SignUp] Registration successful:', data.user?.email);
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken);
-        localStorage.setItem('user', JSON.stringify(data.user));
-
-        toast.success('Account created successfully!');
-
-        // Navigate to step 2, preserving redirect_to param if present
-        const redirectTo = searchParams.get('redirect_to');
-        if (redirectTo) {
-          navigate(`/signup/step-2?redirect_to=${encodeURIComponent(redirectTo)}`);
-        } else {
-          navigateTo(Screen.SIGNUP_STEP_2);
-        }
-      }
-    } catch (err) {
-      console.error('[SignUp] Network error:', err);
-      setError('Network error. Please check your connection.');
-      toast.error('Network error. Please try again.');
+    if (apiError) {
+      setError(apiError);
+      setIsLoading(false);
+      return;
     }
 
-    setIsLoading(false);
+    if (data) {
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+
+      toast.success('Account created successfully!');
+
+      // Navigate to onboarding
+      const redirectTo = searchParams.get('redirect');
+      if (redirectTo) {
+        navigate(redirectTo, { replace: true });
+      } else if (navigateTo) {
+        navigateTo(Screen.SignUpStep2);
+      } else {
+        navigate('/signup/step2', { replace: true });
+      }
+    }
   };
 
-  return (
-    <div className="flex flex-col min-h-screen">
-      <header className="w-full border-b border-slate-200 bg-white/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => navigateTo(Screen.LANDING)}
-          >
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-white">
-              <span className="material-symbols-outlined text-[20px]">school</span>
-            </div>
-            <span className="text-xl font-bold tracking-tight text-slate-900">StudentOS</span>
-          </div>
-        </div>
-      </header>
-      <main className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-lg space-y-6">
-          <div className="text-center">
-            <div className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-primary mb-4">
-              Step 1 of 2
-            </div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
-              Create your account
-            </h1>
-            <p className="mt-3 text-slate-600">
-              Join thousands of high-achieving students optimizing their future.
-            </p>
-          </div>
-          <div className="bg-white shadow-xl shadow-slate-200/40 border border-slate-200 rounded-2xl p-6 sm:p-10">
-            {/* Error Message */}
-            {error && (
-              <div className="mb-6 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
-                {error}
-              </div>
-            )}
+  const getPasswordStrength = () => {
+    let strength = 0;
+    if (password.length >= 10) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    return strength;
+  };
 
+  const passwordStrength = getPasswordStrength();
+
+  return (
+    <AuthLayout
+      title="Sign up"
+      subtitle="Get started for free. No credit card required."
+      footerText="Already have an account?"
+      footerLinkText="Sign in"
+      footerLinkTo="/signin"
+    >
+      {/* Error Message */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
+
+      {/* Google Sign Up Button */}
+      <button
+        type="button"
+        onClick={handleGoogleSignUp}
+        disabled={isGoogleLoading || isLoading}
+        className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-6 rounded-full transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+      >
+        {isGoogleLoading ? (
+          <>
+            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            <span>Connecting...</span>
+          </>
+        ) : (
+          <>
+            <svg className="h-5 w-5" viewBox="0 0 24 24">
+              <path
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                fill="white"
+              />
+              <path
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                fill="white"
+                fillOpacity="0.8"
+              />
+              <path
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                fill="white"
+                fillOpacity="0.6"
+              />
+              <path
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                fill="white"
+                fillOpacity="0.9"
+              />
+            </svg>
+            <span>Continue with Google</span>
+          </>
+        )}
+      </button>
+
+      {/* Divider */}
+      <div className="relative my-8">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-200" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-4 bg-white text-slate-400">or</span>
+        </div>
+      </div>
+
+      {/* Registration Form */}
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Full Name */}
+        <div>
+          <label htmlFor="fullName" className="block text-sm font-medium text-slate-700 mb-2">
+            Full Name
+          </label>
+          <input
+            id="fullName"
+            type="text"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="John Doe"
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 placeholder:text-slate-400"
+            required
+          />
+        </div>
+
+        {/* Email */}
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@university.edu"
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 placeholder:text-slate-400"
+            required
+          />
+        </div>
+
+        {/* Password */}
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
+            Password
+          </label>
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••••"
+              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 placeholder:text-slate-400 pr-12"
+              required
+            />
             <button
               type="button"
-              onClick={handleGoogleSignUp}
-              disabled={isGoogleLoading || isLoading}
-              className="group flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+              tabIndex={-1}
             >
-              {isGoogleLoading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  <span>Connecting...</span>
-                </>
+              {showPassword ? (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                  />
+                </svg>
               ) : (
-                <>
-                  <svg className="h-5 w-5" aria-hidden="true" viewBox="0 0 24 24">
-                    <path
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      fill="#4285F4"
-                    ></path>
-                    <path
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      fill="#34A853"
-                    ></path>
-                    <path
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      fill="#FBBC05"
-                    ></path>
-                    <path
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      fill="#EA4335"
-                    ></path>
-                  </svg>
-                  Sign up with Google
-                </>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  />
+                </svg>
               )}
             </button>
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200"></div>
-              </div>
-              <div className="relative flex justify-center">
-                <span className="bg-white px-4 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  Or continue with email
-                </span>
-              </div>
-            </div>
-            <form className="space-y-5" onSubmit={handleSubmit}>
-              <div>
-                <label htmlFor="fullname" className="block text-sm font-bold text-slate-700 mb-2">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="fullname"
-                  id="fullname"
-                  className="block w-full rounded-xl border-slate-300 py-3 px-4 shadow-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm sm:leading-6"
-                  placeholder="John Doe"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <div>
-                <label htmlFor="email" className="block text-sm font-bold text-slate-700 mb-2">
-                  Email address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  id="email"
-                  className="block w-full rounded-xl border-slate-300 py-3 px-4 shadow-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm sm:leading-6"
-                  placeholder="you@university.edu"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="password" className="block text-sm font-bold text-slate-700 mb-2">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    name="password"
-                    id="password"
-                    className="block w-full rounded-xl border-slate-300 py-3 px-4 shadow-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm sm:leading-6"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="confirm_password"
-                    className="block text-sm font-bold text-slate-700 mb-2"
-                  >
-                    Confirm Password
-                  </label>
-                  <input
-                    type="password"
-                    name="confirm_password"
-                    id="confirm_password"
-                    className="block w-full rounded-xl border-slate-300 py-3 px-4 shadow-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm sm:leading-6"
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-              <div className="pt-4">
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="flex w-full justify-center items-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 hover:bg-primary-dark hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                          fill="none"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      Creating account...
-                    </span>
-                  ) : (
-                    <>
-                      Create Account
-                      <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-            <p className="mt-8 text-center text-xs text-slate-500">
-              By clicking "Create Account", you agree to our
-              <a
-                href="/terms"
-                className="font-medium text-slate-700 hover:text-primary underline decoration-slate-300 underline-offset-4 hover:decoration-primary transition-colors ml-1"
-              >
-                Terms of Service
-              </a>{' '}
-              and{' '}
-              <a
-                href="/privacy"
-                className="font-medium text-slate-700 hover:text-primary underline decoration-slate-300 underline-offset-4 hover:decoration-primary transition-colors"
-              >
-                Privacy Policy
-              </a>
-              .
-            </p>
           </div>
-          <p className="text-center text-sm font-medium text-slate-600">
-            Already have an account?
-            <button
-              onClick={() => navigateTo(Screen.SIGN_IN)}
-              className="text-primary hover:text-primary-dark font-bold hover:underline ml-1"
-            >
-              Sign in
-            </button>
-          </p>
+          {/* Password Strength Indicator */}
+          {password && (
+            <div className="mt-2">
+              <div className="flex gap-1">
+                {[1, 2, 3, 4].map((level) => (
+                  <div
+                    key={level}
+                    className={`h-1 flex-1 rounded-full transition-colors ${
+                      passwordStrength >= level
+                        ? passwordStrength >= 3
+                          ? 'bg-green-500'
+                          : passwordStrength >= 2
+                            ? 'bg-yellow-500'
+                            : 'bg-red-500'
+                        : 'bg-slate-200'
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                {passwordStrength < 2 && 'Weak password'}
+                {passwordStrength === 2 && 'Fair password'}
+                {passwordStrength === 3 && 'Good password'}
+                {passwordStrength === 4 && 'Strong password'}
+              </p>
+            </div>
+          )}
         </div>
-      </main>
-      <footer className="py-8 text-center">
-        <p className="text-sm text-slate-400">© 2024 StudentOS Inc. All rights reserved.</p>
-      </footer>
-    </div>
+
+        {/* Confirm Password */}
+        <div>
+          <label
+            htmlFor="confirmPassword"
+            className="block text-sm font-medium text-slate-700 mb-2"
+          >
+            Confirm Password
+          </label>
+          <div className="relative">
+            <input
+              id="confirmPassword"
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••••"
+              className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 placeholder:text-slate-400 pr-12 ${
+                confirmPassword && password !== confirmPassword
+                  ? 'border-red-300 bg-red-50'
+                  : confirmPassword && password === confirmPassword
+                    ? 'border-green-300 bg-green-50'
+                    : 'border-slate-300'
+              }`}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+              tabIndex={-1}
+            >
+              {showConfirmPassword ? (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                  />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  />
+                </svg>
+              )}
+            </button>
+          </div>
+          {confirmPassword && password !== confirmPassword && (
+            <p className="text-xs text-red-500 mt-1">Passwords don't match</p>
+          )}
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={isLoading || !email || !password || !fullName || password !== confirmPassword}
+          className="w-full py-3.5 px-6 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+        >
+          {isLoading ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              Creating account...
+            </span>
+          ) : (
+            'Create Account'
+          )}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }
