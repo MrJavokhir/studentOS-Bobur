@@ -193,6 +193,12 @@ function AdminRoles({ navigateTo }: NavigationProps) {
     }
   };
 
+  const handleResetPermissions = () => {
+    if (selectedRole) {
+      setSelectedPermissionIds(new Set(selectedRole.permissions.map((p) => p.id)));
+    }
+  };
+
   const handleCreateRole = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRoleName.trim()) {
