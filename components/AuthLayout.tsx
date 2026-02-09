@@ -22,11 +22,11 @@ export default function AuthLayout({
   return (
     <div className="min-h-screen flex bg-white font-sans overflow-hidden">
       {/* Left Panel - Minimalist Form */}
-      <div className="w-full lg:w-[45%] h-screen flex flex-col relative z-20 bg-white border-r border-slate-100 shadow-2xl lg:shadow-none">
-        {/* Logo Header */}
+      <div className="w-full lg:w-[45%] h-screen flex flex-col justify-between relative z-20 bg-white border-r border-slate-100">
+        {/* Top Section - Logo */}
         <div className="p-8">
           <Link to="/" className="flex items-center gap-2.5 group w-fit">
-            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
               <span className="text-white font-bold text-lg">S</span>
             </div>
             <span className="text-xl font-bold text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">
@@ -35,8 +35,8 @@ export default function AuthLayout({
           </Link>
         </div>
 
-        {/* Content Wrapper */}
-        <div className="flex-1 flex flex-col justify-center px-8 sm:px-12 lg:px-20 -mt-10">
+        {/* Middle Section - Form Content (Centered) */}
+        <div className="flex-1 flex flex-col justify-center px-8 sm:px-12 lg:px-16">
           <div className="w-full max-w-sm mx-auto">
             <h1 className="text-3xl font-semibold tracking-tight text-slate-900 mb-2">{title}</h1>
             {subtitle && <p className="text-slate-500 text-sm mb-8">{subtitle}</p>}
@@ -54,20 +54,25 @@ export default function AuthLayout({
                 </Link>
               </p>
             )}
-
-            <div className="mt-8 pt-8 border-t border-slate-50 text-center">
-              <p className="text-xs text-slate-400">Terms • Privacy Policy • © 2026 StudentOS</p>
-            </div>
           </div>
+        </div>
+
+        {/* Bottom Section - Footer */}
+        <div className="p-8 text-center">
+          <p className="text-xs text-slate-400">Terms • Privacy Policy • © 2026 StudentOS</p>
         </div>
       </div>
 
-      {/* Right Panel - 3D Tilted Infinite Scroll */}
-      <div className="hidden lg:flex lg:w-[55%] h-screen relative bg-slate-50 overflow-hidden items-center justify-center perspective-1000">
+      {/* Right Panel - Vibrant 3D Tilted Infinite Scroll */}
+      <div className="hidden lg:flex lg:w-[55%] h-screen relative overflow-hidden items-center justify-center perspective-1000">
+        {/* Vibrant Mesh Gradient Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-200/40 via-transparent to-transparent" />
+
         {/* Gradient Overlay for Fade Effect */}
-        <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-50 via-transparent to-slate-50 pointer-events-none" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-slate-50 to-transparent z-10 pointer-events-none" />
-        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-slate-50 to-transparent z-10 pointer-events-none" />
+        <div className="absolute inset-0 z-10 bg-gradient-to-t from-indigo-100/80 via-transparent to-purple-100/80 pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-pink-100 to-transparent z-10 pointer-events-none" />
+        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-indigo-100 to-transparent z-10 pointer-events-none" />
 
         {/* Tilted Scroll Container */}
         <div
