@@ -502,6 +502,8 @@ export const employerApi = {
     }
     return api.get(`/employer/applications?${searchParams}`);
   },
+  updateApplicationStatus: (id: string, data: { status?: string; notes?: string }) =>
+    api.patch(`/employer/applications/${id}`, data),
 };
 
 // Credits API (Credit System)

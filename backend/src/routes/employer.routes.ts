@@ -22,7 +22,7 @@ router.get('/me', async (req: AuthenticatedRequest, res, next) => {
 
     if (!profile) {
       // Auto-create if not exists (onboarding flow might have been skipped)
-      // Or return 404? Better to return null or strict 404. 
+      // Or return 404? Better to return null or strict 404.
       // User model exists, so if they are EMPLOYER, they should have a profile.
       // But let's return null if not found for frontend to handle "Create Profile" UI.
       res.json(null);
@@ -86,9 +86,9 @@ router.get('/stats', async (req: AuthenticatedRequest, res, next) => {
       }),
       // Shortlisted (e.g. status SCREENING or INTERVIEW)
       prisma.jobApplication.count({
-        where: { 
-          job: { employerId: employerProfile.id }, 
-          status: { in: ['SCREENING', 'INTERVIEW'] } 
+        where: {
+          job: { employerId: employerProfile.id },
+          status: { in: ['SCREENING', 'INTERVIEW'] },
         },
       }),
     ]);
@@ -149,7 +149,7 @@ router.get('/applications', async (req: AuthenticatedRequest, res, next) => {
                   avatarUrl: true,
                   university: true,
                   major: true,
-                  educationLevel: true, 
+                  educationLevel: true,
                   country: true,
                   graduationYear: true,
                   skills: true,
@@ -174,6 +174,71 @@ router.get('/applications', async (req: AuthenticatedRequest, res, next) => {
         pages: Math.ceil(total / parseInt(limit)),
       },
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update application status (shortlist, reject, schedule interview)
+router.patch('/applications/:id', async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const id = req.params.id as string;
+    const { status, notes } = req.body;
+
+    // Validate status
+    const validStatuses = ['NEW', 'SCREENING', 'INTERVIEW', 'OFFER', 'REJECTED', 'WITHDRAWN'];
+    if (status && !validStatuses.includes(status)) {
+      res.status(400).json({ error: 'Invalid status' });
+      return;
+    }
+
+    // Get employer profile
+    const employerProfile = await prisma.employerProfile.findUnique({
+      where: { userId: req.user!.id },
+    });
+
+    if (!employerProfile) {
+      res.status(403).json({ error: 'Employer profile not found' });
+      return;
+    }
+
+    // Verify the application belongs to this employer's job
+    const application = await prisma.jobApplication.findUnique({
+      where: { id },
+      include: { job: true },
+    });
+
+    if (!application) {
+      res.status(404).json({ error: 'Application not found' });
+      return;
+    }
+
+    if (application.job.employerId !== employerProfile.id) {
+      res.status(403).json({ error: 'Not authorized to update this application' });
+      return;
+    }
+
+    // Update the application
+    const updated = await prisma.jobApplication.update({
+      where: { id },
+      data: {
+        ...(status && { status }),
+        ...(notes !== undefined && { notes }),
+      },
+      include: {
+        job: { select: { title: true } },
+        user: {
+          select: {
+            email: true,
+            studentProfile: {
+              select: { fullName: true },
+            },
+          },
+        },
+      },
+    });
+
+    res.json(updated);
   } catch (error) {
     next(error);
   }

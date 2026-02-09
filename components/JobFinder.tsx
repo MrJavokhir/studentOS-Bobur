@@ -4,11 +4,15 @@ import { jobApi } from '../src/services/api';
 import { ThemeToggle } from './ThemeToggle';
 import { NotificationDropdown } from './NotificationDropdown';
 import DashboardLayout from './DashboardLayout';
+import ApplyJobModal from './ApplyJobModal';
 
 export default function JobFinder({ navigateTo }: NavigationProps) {
   // Data State
   const [isLoading, setIsLoading] = useState(true);
   const [jobs, setJobs] = useState<any[]>([]);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchData();
@@ -140,9 +144,24 @@ export default function JobFinder({ navigateTo }: NavigationProps) {
                         </span>
                       </div>
                       <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
-                        <button className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
-                          Apply Now
-                        </button>
+                        {appliedJobIds.has(job.id) ? (
+                          <span className="text-sm font-semibold text-emerald-600 flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[16px]">
+                              check_circle
+                            </span>
+                            Applied
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setSelectedJob(job);
+                              setShowApplyModal(true);
+                            }}
+                            className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                          >
+                            Apply Now
+                          </button>
+                        )}
                         <span className="text-xs text-gray-400">
                           {timeAgo(job.postedAt || new Date().toISOString())}
                         </span>
@@ -155,6 +174,21 @@ export default function JobFinder({ navigateTo }: NavigationProps) {
           </div>
         </div>
       </div>
+
+      {/* Apply Modal */}
+      <ApplyJobModal
+        isOpen={showApplyModal}
+        onClose={() => {
+          setShowApplyModal(false);
+          setSelectedJob(null);
+        }}
+        job={selectedJob}
+        onSuccess={() => {
+          if (selectedJob) {
+            setAppliedJobIds((prev) => new Set(prev).add(selectedJob.id));
+          }
+        }}
+      />
     </DashboardLayout>
   );
 }
