@@ -87,6 +87,11 @@ model User {
   updatedAt     DateTime  @updatedAt
   lastLoginAt   DateTime?
 
+  // Credit System
+  creditBalance Int       @default(0)
+  referralCode  String?   @unique
+  referredBy    String?   // User ID who referred this user
+
   // Relations
   studentProfile    StudentProfile?
   employerProfile   EmployerProfile?
@@ -112,8 +117,12 @@ model User {
   // RBAC - Admin Roles
   adminRoles        UserAdminRole[]
 
+  // Tool Usage
+  toolUsages        ToolUsage[]
+
   @@index([email])
   @@index([googleId])
+  @@index([referralCode])
 }
 
 model StudentProfile {
@@ -601,4 +610,47 @@ model UserAdminRole {
   @@unique([userId, roleId])
   @@index([userId])
   @@index([roleId])
+}
+
+// =============================================================================
+// CREDIT SYSTEM - TOOLS & SETTINGS
+// =============================================================================
+
+model Tool {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  category    String
+  icon        String?  // Material icon name
+  creditCost  Int      @default(0)  // 0 = Free
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  usages ToolUsage[]
+
+  @@index([isActive])
+  @@index([category])
+  @@index([slug])
+}
+
+model AppSettings {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model ToolUsage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  credits   Int
+  usedAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([toolId])
+  @@index([usedAt])
 }

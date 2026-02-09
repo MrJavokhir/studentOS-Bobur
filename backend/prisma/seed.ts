@@ -805,6 +805,113 @@ Celebrate small wins. This positive reinforcement makes habits more likely to st
   }
   console.log('✅ Pricing plans created (4 plans)');
 
+  // =============================================================================
+  // SEED: TOOLS (Credit System)
+  // =============================================================================
+
+  const tools = [
+    {
+      name: 'CV Maker Pro',
+      slug: 'cv-maker',
+      description: 'AI-Powered Resume Builder',
+      category: 'Career Tools',
+      icon: 'description',
+      creditCost: 50,
+      isActive: true,
+    },
+    {
+      name: 'Cover Letter Generator',
+      slug: 'cover-letter',
+      description: 'Generate professional cover letters with AI',
+      category: 'Career Tools',
+      icon: 'mail',
+      creditCost: 30,
+      isActive: true,
+    },
+    {
+      name: 'Job Finder',
+      slug: 'job-finder',
+      description: 'Standard Job Board Access',
+      category: 'Recruitment',
+      icon: 'work_outline',
+      creditCost: 0, // Free
+      isActive: true,
+    },
+    {
+      name: 'Scholarship Finder',
+      slug: 'scholarship-finder',
+      description: 'Find scholarships matching your profile',
+      category: 'Education',
+      icon: 'school',
+      creditCost: 20,
+      isActive: true,
+    },
+    {
+      name: 'Plagiarism Checker',
+      slug: 'plagiarism-checker',
+      description: 'Check your work for plagiarism',
+      category: 'Academic',
+      icon: 'fact_check',
+      creditCost: 15,
+      isActive: true,
+    },
+    {
+      name: 'Presentation Maker',
+      slug: 'presentation-maker',
+      description: 'Create stunning presentations with AI',
+      category: 'Productivity',
+      icon: 'slideshow',
+      creditCost: 25,
+      isActive: true,
+    },
+    {
+      name: 'Essay Writer',
+      slug: 'essay-writer',
+      description: 'AI-assisted essay writing tool',
+      category: 'Academic',
+      icon: 'edit_note',
+      creditCost: 40,
+      isActive: true,
+    },
+    {
+      name: 'Study Planner',
+      slug: 'study-planner',
+      description: 'Organize your study schedule',
+      category: 'Productivity',
+      icon: 'calendar_month',
+      creditCost: 0, // Free
+      isActive: true,
+    },
+  ];
+
+  for (const tool of tools) {
+    await prisma.tool.upsert({
+      where: { slug: tool.slug },
+      update: tool,
+      create: tool,
+    });
+  }
+  console.log('✅ Tools created (8 tools)');
+
+  // =============================================================================
+  // SEED: APP SETTINGS
+  // =============================================================================
+
+  const settings = [
+    { key: 'referral_bonus', value: '100' },
+    { key: 'early_bird_active', value: 'true' },
+    { key: 'default_welcome_credits', value: '50' },
+  ];
+
+  for (const setting of settings) {
+    await prisma.appSettings.upsert({
+      where: { key: setting.key },
+      update: { value: setting.value },
+      create: setting,
+    });
+  }
+  console.log('✅ App settings configured');
+
   console.log('🎉 Database seeded successfully!');
   console.log('\n📋 Admin/Employer credentials are set via environment variables');
   console.log('   ADMIN_PASSWORD and EMPLOYER_PASSWORD');
@@ -813,6 +920,8 @@ Celebrate small wins. This positive reinforcement makes habits more likely to st
   console.log('   - 10 Scholarships');
   console.log('   - 3 Blog Posts');
   console.log('   - 4 Pricing Plans');
+  console.log('   - 8 Tools (Credit System)');
+  console.log('   - 3 App Settings');
 }
 
 main()

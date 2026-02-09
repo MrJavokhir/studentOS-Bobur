@@ -390,6 +390,38 @@ export const adminApi = {
     }
     return api.get<{ logs: any[]; pagination: any }>(`/admin/audit-logs?${searchParams}`);
   },
+
+  // Tools API (Credit System)
+  getTools: () => api.get<{ success: boolean; data: any[] }>('/admin/tools'),
+  createTool: (data: {
+    name: string;
+    slug: string;
+    description?: string;
+    category: string;
+    icon?: string;
+    creditCost?: number;
+    isActive?: boolean;
+  }) => api.post<{ success: boolean; data: any }>('/admin/tools', data),
+  updateTool: (
+    id: string,
+    data: Partial<{
+      name: string;
+      slug: string;
+      description: string;
+      category: string;
+      icon: string;
+      creditCost: number;
+      isActive: boolean;
+    }>
+  ) => api.patch<{ success: boolean; data: any }>(`/admin/tools/${id}`, data),
+  toggleTool: (id: string) =>
+    api.patch<{ success: boolean; data: any }>(`/admin/tools/${id}/toggle`, {}),
+  deleteTool: (id: string) => api.delete<{ success: boolean }>(`/admin/tools/${id}`),
+
+  // App Settings API
+  getSettings: () => api.get<{ success: boolean; data: Record<string, string> }>('/admin/settings'),
+  updateSettings: (data: Record<string, string | number | boolean>) =>
+    api.patch<{ success: boolean; data: Record<string, string> }>('/admin/settings', data),
 };
 
 // Finance API
