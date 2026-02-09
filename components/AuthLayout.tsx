@@ -92,70 +92,137 @@ export default function AuthLayout({
       </div>
 
       {/* Right Panel - Visual Showcase */}
-      <div className="hidden lg:block lg:w-[55%] relative overflow-hidden bg-slate-900">
-        {/* Animated Background - Floating Cards */}
+      <div className="hidden lg:block lg:w-[55%] relative overflow-hidden bg-slate-50">
+        {/* Background Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50/50 to-violet-100" />
+
+        {/* Animated Icons Container */}
         <div className="absolute inset-0 overflow-hidden">
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-purple-900/20 z-10" />
-
-          {/* Floating Cards Animation */}
-          <div className="absolute inset-0 animate-float-slow">
-            <div className="grid grid-cols-3 gap-4 p-4 transform rotate-[-8deg] scale-110 origin-center">
-              {/* Row 1 */}
-              <div className="space-y-4">
-                <div className="bg-gradient-to-br from-orange-400 to-pink-500 rounded-2xl h-48 shadow-2xl transform hover:scale-105 transition-transform" />
-                <div className="bg-gradient-to-br from-cyan-400 to-blue-500 rounded-2xl h-64 shadow-2xl" />
-                <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl h-52 shadow-2xl" />
-                <div className="bg-gradient-to-br from-violet-400 to-purple-500 rounded-2xl h-48 shadow-2xl" />
-              </div>
-              {/* Row 2 */}
-              <div className="space-y-4 mt-8">
-                <div className="bg-gradient-to-br from-rose-400 to-red-500 rounded-2xl h-56 shadow-2xl" />
-                <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl h-48 shadow-2xl" />
-                <div className="bg-gradient-to-br from-teal-400 to-cyan-500 rounded-2xl h-60 shadow-2xl" />
-                <div className="bg-gradient-to-br from-indigo-400 to-blue-500 rounded-2xl h-52 shadow-2xl" />
-              </div>
-              {/* Row 3 */}
-              <div className="space-y-4 mt-4">
-                <div className="bg-gradient-to-br from-fuchsia-400 to-pink-500 rounded-2xl h-52 shadow-2xl" />
-                <div className="bg-gradient-to-br from-lime-400 to-green-500 rounded-2xl h-48 shadow-2xl" />
-                <div className="bg-gradient-to-br from-sky-400 to-blue-500 rounded-2xl h-64 shadow-2xl" />
-                <div className="bg-gradient-to-br from-yellow-400 to-amber-500 rounded-2xl h-48 shadow-2xl" />
-              </div>
-            </div>
+          {/* Icon 1: Graduation Cap (Top Left) */}
+          <div
+            className="absolute top-[15%] left-[10%] opacity-10 text-indigo-900 animate-float-slow"
+            style={{ animationDelay: '0s' }}
+          >
+            <svg
+              width="120"
+              height="120"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+              <path d="M6 12v5c3 3 9 3 12 0v-5" />
+            </svg>
           </div>
 
-          {/* Floating Particles */}
-          <div className="absolute inset-0 z-20">
-            <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-white/30 rounded-full animate-pulse" />
-            <div
-              className="absolute top-1/3 right-1/3 w-3 h-3 bg-blue-400/40 rounded-full animate-bounce"
-              style={{ animationDelay: '0.5s' }}
-            />
-            <div
-              className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-purple-400/40 rounded-full animate-pulse"
-              style={{ animationDelay: '1s' }}
-            />
-            <div
-              className="absolute top-1/2 right-1/4 w-4 h-4 bg-pink-400/30 rounded-full animate-bounce"
-              style={{ animationDelay: '1.5s' }}
-            />
+          {/* Icon 2: Open Book (Top Right) */}
+          <div
+            className="absolute top-[20%] right-[15%] opacity-[0.08] text-blue-900 animate-float-medium"
+            style={{ animationDelay: '1s' }}
+          >
+            <svg
+              width="100"
+              height="100"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
           </div>
+
+          {/* Icon 3: Code/Terminal (Center Left) */}
+          <div
+            className="absolute top-[50%] left-[8%] opacity-[0.12] text-violet-900 animate-float-fast"
+            style={{ animationDelay: '2s' }}
+          >
+            <svg
+              width="90"
+              height="90"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="16 18 22 12 16 6" />
+              <polyline points="8 6 2 12 8 18" />
+            </svg>
+          </div>
+
+          {/* Icon 4: Lightbulb (Bottom Right) */}
+          <div
+            className="absolute bottom-[20%] right-[10%] opacity-10 text-amber-900 animate-float-slow"
+            style={{ animationDelay: '3s' }}
+          >
+            <svg
+              width="110"
+              height="110"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.4 1.5-3.8 0-3.2-2.7-5.7-6-5.7s-6 2.5-6 5.7c0 1.4.5 2.8 1.5 3.8.8.8 1.3 1.5 1.5 2.5" />
+              <path d="M9 18h6" />
+              <path d="M10 22h4" />
+            </svg>
+          </div>
+
+          {/* Icon 5: Globe/Atom (Bottom Left) */}
+          <div
+            className="absolute bottom-[10%] left-[20%] opacity-[0.08] text-teal-900 animate-float-medium"
+            style={{ animationDelay: '4s' }}
+          >
+            <svg
+              width="95"
+              height="95"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+          </div>
+
+          {/* Additional decorative elements */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-400/5 rounded-full blur-3xl animate-pulse" />
         </div>
       </div>
 
-      {/* Custom Animation Styles */}
+      {/* Animation Styles */}
       <style>{`
-        @keyframes float-slow {
-          0%, 100% {
-            transform: translateY(0) rotate(-8deg);
-          }
-          50% {
-            transform: translateY(-20px) rotate(-8deg);
-          }
+        @keyframes float {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(2deg); }
+        }
+        @keyframes float-reverse {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(15px) rotate(-2deg); }
         }
         .animate-float-slow {
-          animation: float-slow 8s ease-in-out infinite;
+          animation: float 8s ease-in-out infinite;
+        }
+        .animate-float-medium {
+          animation: float-reverse 10s ease-in-out infinite;
+        }
+        .animate-float-fast {
+          animation: float 12s ease-in-out infinite;
         }
       `}</style>
     </div>
