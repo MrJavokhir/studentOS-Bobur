@@ -1,30 +1,50 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Supabase configuration
-// These must be set in your environment variables
+// Supabase configuration - lazy initialization
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
-    '[Supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY environment variables'
-  );
-}
+// Lazy-initialized Supabase client
+let supabaseClient: SupabaseClient | null = null;
 
-// Create Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-  },
-});
+/**
+ * Get or create the Supabase client
+ * Only creates the client when actually needed (lazy initialization)
+ */
+const getSupabaseClient = (): SupabaseClient => {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      'Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.'
+    );
+  }
+
+  if (!supabaseClient) {
+    supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+      },
+    });
+  }
+
+  return supabaseClient;
+};
+
+/**
+ * Check if Supabase is configured
+ */
+export const isSupabaseConfigured = (): boolean => {
+  return !!(supabaseUrl && supabaseAnonKey);
+};
 
 /**
  * Sign in with Google OAuth
  * Redirects user to Google sign-in page
  */
 export const signInWithGoogle = async () => {
+  const supabase = getSupabaseClient();
+
   // Dynamically build redirect URL based on current origin
   const redirectTo = `${window.location.origin}/auth/callback`;
 
@@ -51,6 +71,7 @@ export const signInWithGoogle = async () => {
  * Get current Supabase session
  */
 export const getSession = async () => {
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase.auth.getSession();
   if (error) {
     console.error('[Supabase] Get session error:', error);
@@ -63,11 +84,19 @@ export const getSession = async () => {
  * Sign out from Supabase
  */
 export const signOutSupabase = async () => {
+  const supabase = getSupabaseClient();
   const { error } = await supabase.auth.signOut();
   if (error) {
     console.error('[Supabase] Sign out error:', error);
     throw error;
   }
+};
+
+// Export a getter for the client (lazy)
+export const supabase = {
+  get auth() {
+    return getSupabaseClient().auth;
+  },
 };
 
 export default supabase;

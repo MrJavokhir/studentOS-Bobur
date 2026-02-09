@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Screen, NavigationProps } from '../types';
 import { authApi } from '../src/services/api';
-import { signInWithGoogle } from '../src/lib/supabase';
+import { signInWithGoogle, isSupabaseConfigured } from '../src/lib/supabase';
 import toast from 'react-hot-toast';
 
 export default function SignUpStep1({ navigateTo }: NavigationProps) {
@@ -17,6 +17,12 @@ export default function SignUpStep1({ navigateTo }: NavigationProps) {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const handleGoogleSignUp = async () => {
+    if (!isSupabaseConfigured()) {
+      setError('Google sign-up is not available at the moment. Please use email registration.');
+      toast.error('Google sign-up not configured');
+      return;
+    }
+
     setIsGoogleLoading(true);
     setError('');
     try {
@@ -24,8 +30,9 @@ export default function SignUpStep1({ navigateTo }: NavigationProps) {
       // The user will be redirected to Google, then back to /auth/callback
     } catch (err) {
       console.error('[SignUp] Google signup error:', err);
-      setError('Failed to initiate Google sign up. Please try again.');
-      toast.error('Failed to sign up with Google');
+      const message = err instanceof Error ? err.message : 'Failed to sign up with Google';
+      setError(message);
+      toast.error(message);
       setIsGoogleLoading(false);
     }
   };

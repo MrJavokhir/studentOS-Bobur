@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { NavigationProps } from '../types';
 import { useAuth } from '../src/contexts/AuthContext';
-import { signInWithGoogle } from '../src/lib/supabase';
+import { signInWithGoogle, isSupabaseConfigured } from '../src/lib/supabase';
 import toast from 'react-hot-toast';
 
 export default function SignIn({ navigateTo: _navigateTo }: NavigationProps) {
@@ -63,6 +63,12 @@ export default function SignIn({ navigateTo: _navigateTo }: NavigationProps) {
   };
 
   const handleGoogleLogin = async () => {
+    if (!isSupabaseConfigured()) {
+      setError('Google sign-in is not available at the moment. Please use email login.');
+      toast.error('Google sign-in not configured');
+      return;
+    }
+
     setIsGoogleLoading(true);
     setError('');
     try {
@@ -70,8 +76,9 @@ export default function SignIn({ navigateTo: _navigateTo }: NavigationProps) {
       // The user will be redirected to Google, then back to /auth/callback
     } catch (err) {
       console.error('[SignIn] Google login error:', err);
-      setError('Failed to initiate Google sign in. Please try again.');
-      toast.error('Failed to sign in with Google');
+      const message = err instanceof Error ? err.message : 'Failed to sign in with Google';
+      setError(message);
+      toast.error(message);
       setIsGoogleLoading(false);
     }
   };
