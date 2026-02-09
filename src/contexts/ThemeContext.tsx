@@ -20,26 +20,41 @@ function getSystemTheme(): 'light' | 'dark' {
   return 'light';
 }
 
-function getStoredTheme(): Theme {
+function getStoredTheme(): Theme | null {
   if (typeof window !== 'undefined') {
     const stored = localStorage.getItem(THEME_STORAGE_KEY);
     if (stored === 'light' || stored === 'dark' || stored === 'system') {
-      return stored;
+      return stored as Theme;
     }
   }
-  return 'system';
+  return null;
 }
 
 interface ThemeProviderProps {
   children: ReactNode;
   defaultTheme?: Theme;
+  enableSystem?: boolean;
 }
 
-export function ThemeProvider({ children, defaultTheme = 'system' }: ThemeProviderProps) {
+export function ThemeProvider({
+  children,
+  defaultTheme = 'system',
+  enableSystem = true,
+}: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => getStoredTheme() || defaultTheme);
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(() => {
     const stored = getStoredTheme();
-    return stored === 'system' ? getSystemTheme() : stored === 'dark' ? 'dark' : 'light';
+    const initialTheme = stored || defaultTheme;
+
+    if (initialTheme === 'system' && enableSystem) {
+      return getSystemTheme();
+    }
+
+    if (initialTheme === 'system' && !enableSystem) {
+      return 'light';
+    }
+
+    return initialTheme === 'dark' ? 'dark' : 'light';
   });
 
   useEffect(() => {
@@ -49,7 +64,14 @@ export function ThemeProvider({ children, defaultTheme = 'system' }: ThemeProvid
     root.classList.remove('light', 'dark');
 
     // Determine the actual theme to apply
-    const actualTheme = theme === 'system' ? getSystemTheme() : theme;
+    let actualTheme: 'light' | 'dark';
+
+    if (theme === 'system') {
+      actualTheme = enableSystem ? getSystemTheme() : 'light';
+    } else {
+      actualTheme = theme === 'dark' ? 'dark' : 'light';
+    }
+
     setResolvedTheme(actualTheme);
 
     // Add the theme class
@@ -57,9 +79,11 @@ export function ThemeProvider({ children, defaultTheme = 'system' }: ThemeProvid
 
     // Update data attribute for CSS
     root.setAttribute('data-theme', actualTheme);
-  }, [theme]);
+  }, [theme, enableSystem]);
 
   useEffect(() => {
+    if (!enableSystem) return;
+
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
@@ -75,7 +99,7 @@ export function ThemeProvider({ children, defaultTheme = 'system' }: ThemeProvid
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
+  }, [theme, enableSystem]);
 
   const setTheme = (newTheme: Theme) => {
     localStorage.setItem(THEME_STORAGE_KEY, newTheme);

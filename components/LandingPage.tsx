@@ -102,7 +102,7 @@ export default function LandingPage({ navigateTo }: NavigationProps) {
         <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
       </div>
 
-      <header className="fixed top-0 z-50 w-full bg-white/80 dark:bg-[#111421]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 h-20 transition-all duration-200">
+      <header className="fixed top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 h-20 transition-all duration-200">
         <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-6 lg:px-8">
           <div
             className="flex items-center gap-2 cursor-pointer select-none"
@@ -111,25 +111,23 @@ export default function LandingPage({ navigateTo }: NavigationProps) {
             <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-blue-600 text-white shadow-lg shadow-primary/20">
               <span className="material-symbols-outlined text-[20px]">school</span>
             </div>
-            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-              StudentOS
-            </span>
+            <span className="text-xl font-bold tracking-tight text-slate-900">StudentOS</span>
           </div>
           <nav className="hidden md:flex items-center gap-8">
             <button
               onClick={() => navigate('/')}
-              className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors"
+              className="text-sm font-medium text-slate-600 hover:text-primary transition-colors"
             >
               Home
             </button>
             <button
               onClick={() => navigate('/about')}
-              className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors"
+              className="text-sm font-medium text-slate-600 hover:text-primary transition-colors"
             >
               About
             </button>
             <div className="group relative h-full flex items-center">
-              <button className="flex items-center gap-1 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors py-6 focus:outline-none">
+              <button className="flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-primary transition-colors py-6 focus:outline-none">
                 Tools
                 <span className="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:-rotate-180">
                   keyboard_arrow_down
@@ -274,19 +272,19 @@ export default function LandingPage({ navigateTo }: NavigationProps) {
             </div>
             <button
               onClick={() => handleToolClick('/app/community')}
-              className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors"
+              className="text-sm font-medium text-slate-600 hover:text-primary transition-colors"
             >
               Community
             </button>
             <button
               onClick={() => navigate('/blog')}
-              className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors"
+              className="text-sm font-medium text-slate-600 hover:text-primary transition-colors"
             >
               Blog
             </button>
             <button
               onClick={() => navigate('/contact')}
-              className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors"
+              className="text-sm font-medium text-slate-600 hover:text-primary transition-colors"
             >
               Contact
             </button>
@@ -316,14 +314,14 @@ export default function LandingPage({ navigateTo }: NavigationProps) {
                 {/* Sign In - guest only */}
                 <button
                   onClick={() => navigate('/signin')}
-                  className="hidden text-sm font-medium text-slate-900 dark:text-white hover:text-primary dark:hover:text-primary sm:block transition-colors"
+                  className="hidden text-sm font-medium text-slate-900 hover:text-primary sm:block transition-colors"
                 >
                   Sign In
                 </button>
                 {/* Get Started - guest only */}
                 <button
                   onClick={() => navigate('/signup/step-1')}
-                  className="rounded-xl bg-slate-900 dark:bg-primary px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-slate-800 dark:hover:bg-primary-dark hover:shadow-lg hover:shadow-slate-500/20 active:scale-95"
+                  className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-slate-800 hover:shadow-lg hover:shadow-slate-500/20 active:scale-95"
                 >
                   Get Started
                 </button>
