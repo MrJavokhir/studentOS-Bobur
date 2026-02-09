@@ -79,7 +79,7 @@ export default function SignIn({ navigateTo: _navigateTo }: NavigationProps) {
       title="Sign in"
       footerText="Don't have an account?"
       footerLinkText="Sign up"
-      footerLinkTo="/signup"
+      footerLinkTo="/signup/step-1"
     >
       {/* Error Message */}
       {error && (
