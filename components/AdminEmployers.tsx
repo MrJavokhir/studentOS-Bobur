@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Screen, NavigationProps } from '../types';
 import { useAuth } from '../src/contexts/AuthContext';
-import { adminDashboardApi } from '../src/services/api';
+import { adminApi } from '../src/services/api';
 import toast from 'react-hot-toast';
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -154,7 +154,7 @@ export default function AdminEmployers({ navigateTo }: NavigationProps) {
   // ─── API calls ─────────────────────────────────────────────────────
   const fetchStats = async () => {
     try {
-      const res = await adminDashboardApi.getEmployerStats();
+      const res = await adminApi.getEmployerStats();
       if (res.data) setStats(res.data as Stats);
     } catch {
       console.error('Failed to fetch employer stats');
@@ -172,7 +172,7 @@ export default function AdminEmployers({ navigateTo }: NavigationProps) {
       if (statusFilter) params.status = statusFilter;
       if (industryFilter) params.industry = industryFilter;
 
-      const res = await adminDashboardApi.getEmployers(params);
+      const res = await adminApi.getEmployers(params);
       const data = res.data as any;
       if (data) {
         setEmployers(data.employers || []);
@@ -193,7 +193,7 @@ export default function AdminEmployers({ navigateTo }: NavigationProps) {
     }
     try {
       setIsSaving(true);
-      await adminDashboardApi.createEmployer(formData);
+      await adminApi.createEmployer(formData);
       toast.success('Employer created successfully');
       setShowAddModal(false);
       setFormData({ companyName: '', email: '', industry: '', website: '', repName: '' });
@@ -210,7 +210,7 @@ export default function AdminEmployers({ navigateTo }: NavigationProps) {
     if (!editingEmployer) return;
     try {
       setIsSaving(true);
-      await adminDashboardApi.updateEmployer(editingEmployer.id, {
+      await adminApi.updateEmployer(editingEmployer.id, {
         companyName: formData.companyName,
         industry: formData.industry || null,
         website: formData.website || null,
@@ -228,7 +228,7 @@ export default function AdminEmployers({ navigateTo }: NavigationProps) {
 
   const handleVerify = async (id: string) => {
     try {
-      await adminDashboardApi.updateEmployer(id, { verificationStatus: 'verified' });
+      await adminApi.updateEmployer(id, { verificationStatus: 'verified' });
       toast.success('Employer verified');
       fetchEmployers();
       fetchStats();
@@ -239,7 +239,7 @@ export default function AdminEmployers({ navigateTo }: NavigationProps) {
 
   const handleDelete = async (id: string) => {
     try {
-      await adminDashboardApi.deleteEmployer(id);
+      await adminApi.deleteEmployer(id);
       toast.success('Employer deleted');
       setShowDeleteConfirm(null);
       fetchEmployers();
