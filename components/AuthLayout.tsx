@@ -20,9 +20,9 @@ export default function AuthLayout({
   footerLinkTo,
 }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen flex bg-white font-sans overflow-hidden">
+    <div className="min-h-screen flex bg-white font-sans">
       {/* Left Panel - Minimalist Form */}
-      <div className="w-full lg:w-[45%] h-screen flex flex-col justify-between relative z-20 bg-white border-r border-slate-100">
+      <div className="w-full lg:w-[45%] min-h-screen lg:h-screen lg:overflow-y-auto flex flex-col justify-between relative z-20 bg-white border-r border-slate-100">
         {/* Top Section - Logo */}
         <div className="p-8">
           <Link to="/" className="flex items-center gap-2.5 group w-fit">
