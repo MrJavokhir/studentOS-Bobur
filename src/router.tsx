@@ -70,6 +70,7 @@ const BlogPost = withNavigate(lazyRetry(() => import('../components/BlogPost')))
 const ContactSupport = withNavigate(lazyRetry(() => import('../components/ContactSupport')));
 const TermsOfService = withNavigate(lazyRetry(() => import('../components/TermsOfService')));
 const PrivacyPolicy = withNavigate(lazyRetry(() => import('../components/PrivacyPolicy')));
+const AuthCallback = lazyRetry(() => import('../components/AuthCallback'));
 
 // App (Student)
 const Dashboard = withNavigate(lazyRetry(() => import('../components/Dashboard')));
@@ -145,6 +146,14 @@ export const router = createBrowserRouter([
         element: (
           <Wrap>
             <SignIn />
+          </Wrap>
+        ),
+      },
+      {
+        path: '/auth/callback',
+        element: (
+          <Wrap>
+            <AuthCallback />
           </Wrap>
         ),
       },

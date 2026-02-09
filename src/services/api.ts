@@ -186,6 +186,33 @@ export const authApi = {
 
   updateEmail: (data: { newEmail: string; password: string }) =>
     api.post<{ message: string }>('/auth/update-email', data),
+
+  googleCallback: async (data: {
+    supabaseAccessToken: string;
+    email: string;
+    fullName: string;
+    avatarUrl: string;
+    providerId: string;
+  }) => {
+    console.log('[Auth] Exchanging Supabase OAuth for backend token:', data.email);
+    const result = await api.post<{
+      user: {
+        id: string;
+        email: string;
+        role: string;
+        profile: { fullName?: string; avatarUrl?: string } | null;
+      };
+      accessToken: string;
+      refreshToken: string;
+      isNewUser: boolean;
+    }>('/auth/google-callback', data);
+    if (result.error) {
+      console.error('[Auth] Google callback failed:', result.error);
+    } else {
+      console.log('[Auth] Google callback successful:', result.data?.user?.email);
+    }
+    return result;
+  },
 };
 
 // User API

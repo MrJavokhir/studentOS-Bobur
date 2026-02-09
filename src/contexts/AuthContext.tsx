@@ -18,9 +18,14 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (email: string, password: string, fullName: string) => Promise<{ success: boolean; error?: string }>;
+  register: (
+    email: string,
+    password: string,
+    fullName: string
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -100,6 +105,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser((prev) => (prev ? { ...prev, ...updates } : null));
   };
 
+  const refreshUser = async () => {
+    // First try to get from localStorage (set by OAuth callback)
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser) as User);
+      } catch {
+        // If parse fails, try to fetch from API
+      }
+    }
+    // Also verify with API
+    const { data, error } = await authApi.me();
+    if (data && !error) {
+      setUser(data as User);
+      localStorage.setItem('user', JSON.stringify(data));
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -110,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         updateUser,
+        refreshUser,
       }}
     >
       {children}
