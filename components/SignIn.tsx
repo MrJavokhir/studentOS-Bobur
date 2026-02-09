@@ -166,7 +166,7 @@ export default function SignIn({ navigateTo: _navigateTo }: NavigationProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="name@studentos.com"
-            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 placeholder:text-slate-400"
+            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm font-medium text-slate-900 placeholder:text-slate-400"
             required
           />
         </div>
@@ -183,7 +183,7 @@ export default function SignIn({ navigateTo: _navigateTo }: NavigationProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 placeholder:text-slate-400 pr-12"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm font-medium text-slate-900 placeholder:text-slate-400 pr-12"
               required
             />
             <button
@@ -235,7 +235,7 @@ export default function SignIn({ navigateTo: _navigateTo }: NavigationProps) {
         <button
           type="submit"
           disabled={isSubmitting || !email || !password}
-          className="w-full py-3.5 px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200"
+          className="w-full py-3.5 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl active:scale-[0.98]"
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-2">

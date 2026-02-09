@@ -42,7 +42,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   // Not authenticated → redirect to signin with return URL
   if (!isAuthenticated || !user) {
     const returnUrl = encodeURIComponent(location.pathname + location.search);
-    return <Navigate to={`/signin?returnUrl=${returnUrl}`} replace />;
+    return <Navigate to={`/signin?redirect=${returnUrl}`} replace />;
   }
 
   // Check role-based access if roles are specified
