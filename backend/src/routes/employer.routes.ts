@@ -2,6 +2,7 @@ import { Router } from 'express';
 import prisma from '../config/database.js';
 import { authenticate, AuthenticatedRequest } from '../middleware/auth.middleware.js';
 import { requireEmployer } from '../middleware/role.middleware.js';
+import { sendTelegramMessage } from '../services/telegram.service.js';
 
 const router = Router();
 
@@ -243,6 +244,24 @@ router.patch('/applications/:id', async (req: AuthenticatedRequest, res, next) =
     });
 
     res.json(updated);
+
+    // ── Telegram notification to student (fire-and-forget) ──
+    if (status && updated.userId) {
+      const statusMessages: Record<string, string> = {
+        SCREENING: '👀 Your application is being reviewed',
+        INTERVIEW: '🎉 You have been invited to an interview',
+        OFFER: '🏆 Congratulations! You received a job offer',
+        REJECTED: '😔 Your application was not selected this time',
+      };
+      const msg = statusMessages[status];
+      if (msg) {
+        const jobTitle = updated.job?.title || 'a position';
+        sendTelegramMessage(
+          updated.userId,
+          `${msg} for <b>${jobTitle}</b>!\n\nCheck your StudentOS dashboard for details.`
+        ).catch(() => {});
+      }
+    }
   } catch (error) {
     next(error);
   }

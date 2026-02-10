@@ -81,9 +81,13 @@ router.get('/dashboard', authenticate, async (req: AuthenticatedRequest, res, ne
     const userId = req.user!.id;
 
     // Get profile
-    const profile = await prisma.studentProfile.findUnique({
-      where: { userId },
-    });
+    const [profile, userData] = await Promise.all([
+      prisma.studentProfile.findUnique({ where: { userId } }),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { telegramChatId: true },
+      }),
+    ]);
 
     // Get recent applications
     const applications = await prisma.jobApplication.findMany({
@@ -126,6 +130,7 @@ router.get('/dashboard', authenticate, async (req: AuthenticatedRequest, res, ne
     });
 
     res.json({
+      userId,
       profile,
       recentApplications: applications,
       habits: habits.map((h) => ({
@@ -146,6 +151,7 @@ router.get('/dashboard', authenticate, async (req: AuthenticatedRequest, res, ne
         habitsCompletedToday: todayLogs,
         profileCompletion: profile?.profileCompletion || 0,
       },
+      telegramConnected: !!userData?.telegramChatId,
     });
   } catch (error) {
     next(error);

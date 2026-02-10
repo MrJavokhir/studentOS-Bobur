@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '../config/database.js';
 import { authenticate, AuthenticatedRequest } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
+import { sendTelegramMessage, sendTelegramMessageDirect } from '../services/telegram.service.js';
 
 const router = Router();
 
@@ -114,6 +115,21 @@ router.post('/admin/send', authenticate, async (req: AuthenticatedRequest, res, 
         type: notificationType,
       }));
       const result = await prisma.notification.createMany({ data });
+
+      // Forward to Telegram (fire-and-forget)
+      const telegramUsers = await prisma.user.findMany({
+        where: { telegramChatId: { not: null } },
+        select: { telegramChatId: true },
+      });
+      for (const u of telegramUsers) {
+        if (u.telegramChatId) {
+          sendTelegramMessageDirect(
+            u.telegramChatId,
+            `📢 <b>${title}</b>\n\n${message || ''}`
+          ).catch(() => {});
+        }
+      }
+
       return res.json({
         success: true,
         count: result.count,
@@ -139,6 +155,9 @@ router.post('/admin/send', authenticate, async (req: AuthenticatedRequest, res, 
         type: notificationType,
       },
     });
+
+    // Forward to Telegram (fire-and-forget)
+    sendTelegramMessage(targetUser.id, `📢 <b>${title}</b>\n\n${message || ''}`).catch(() => {});
 
     res.json({ success: true, notification, message: `Notification sent to ${email}` });
   } catch (error) {
