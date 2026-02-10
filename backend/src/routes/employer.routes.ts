@@ -107,7 +107,7 @@ router.get('/stats', async (req: AuthenticatedRequest, res, next) => {
 // Get all applications for this employer (aggregated)
 router.get('/applications', async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { page = '1', limit = '10', status, search } = req.query as any;
+    const { page = '1', limit = '10', status, search, jobId } = req.query as any;
 
     const employerProfile = await prisma.employerProfile.findUnique({
       where: { userId: req.user!.id },
@@ -121,6 +121,10 @@ router.get('/applications', async (req: AuthenticatedRequest, res, next) => {
     const where: any = {
       job: { employerId: employerProfile.id },
     };
+
+    if (jobId) {
+      where.jobId = jobId;
+    }
 
     if (status) {
       where.status = status;

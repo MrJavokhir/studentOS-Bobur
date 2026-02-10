@@ -531,6 +531,7 @@ export const employerApi = {
     limit?: number;
     status?: string;
     search?: string;
+    jobId?: string;
   }) => {
     const searchParams = new URLSearchParams();
     if (params) {

@@ -31,6 +31,10 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
     tagline: '',
   });
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [jobFilter, setJobFilter] = useState<string | undefined>(undefined);
+  const [appPage, setAppPage] = useState(1);
+  const [appPagination, setAppPagination] = useState({ total: 0, pages: 0, page: 1, limit: 12 });
   const [isLoading, setIsLoading] = useState(true);
   const [showPostJobModal, setShowPostJobModal] = useState(false);
   const [showApplicantModal, setShowApplicantModal] = useState(false);
@@ -39,9 +43,19 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
   useEffect(() => {
     if (activeTab === 'dashboard') fetchDashboardData();
     if (activeTab === 'jobs') fetchJobs();
-    if (activeTab === 'students') fetchApplications();
+    if (activeTab === 'students') {
+      fetchApplications();
+      if (jobs.length === 0) fetchJobs(); // for dropdown
+    }
     if (activeTab === 'company') fetchCompanyProfile();
-  }, [activeTab, statusFilter]);
+  }, [activeTab, statusFilter, jobFilter, appPage]);
+
+  // Debounced search
+  useEffect(() => {
+    if (activeTab !== 'students') return;
+    const timer = setTimeout(() => fetchApplications(), 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
@@ -65,12 +79,17 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
 
   const fetchApplications = async () => {
     setIsLoading(true);
-    const filters: any = {};
+    const filters: any = { page: appPage, limit: 12 };
     if (statusFilter) filters.status = statusFilter;
+    if (searchQuery.trim()) filters.search = searchQuery.trim();
+    if (jobFilter) filters.jobId = jobFilter;
 
     try {
       const { data } = await employerApi.getApplications(filters);
-      if (data) setApplications((data as any).applications);
+      if (data) {
+        setApplications((data as any).applications);
+        if ((data as any).pagination) setAppPagination((data as any).pagination);
+      }
     } catch (error) {
       console.error('Failed to fetch applications', error);
       toast.error('Failed to load applications');
@@ -841,7 +860,11 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                     Applicants
                   </h1>
                   <p className="text-slate-500 dark:text-slate-400">
-                    Manage your active candidate pipeline for Junior Frontend Developer.
+                    Manage your active candidate pipeline
+                    {jobFilter
+                      ? ` for ${jobs.find((j: any) => j.id === jobFilter)?.title || 'selected job'}`
+                      : ''}
+                    .
                   </p>
                 </div>
                 <div className="flex gap-3">
@@ -870,10 +893,18 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                       <select
                         className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-lg text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary cursor-pointer"
                         aria-label="Select job position"
+                        value={jobFilter || ''}
+                        onChange={(e) => {
+                          setJobFilter(e.target.value || undefined);
+                          setAppPage(1);
+                        }}
                       >
-                        <option>Junior Frontend Developer</option>
-                        <option>UX/UI Design Intern</option>
-                        <option>Marketing Associate</option>
+                        <option value="">All Jobs</option>
+                        {jobs.map((j: any) => (
+                          <option key={j.id} value={j.id}>
+                            {j.title}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -887,7 +918,10 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                     ].map((filter) => (
                       <button
                         key={filter.label}
-                        onClick={() => setStatusFilter(filter.value)}
+                        onClick={() => {
+                          setStatusFilter(filter.value);
+                          setAppPage(1);
+                        }}
                         className={`whitespace-nowrap px-4 py-2 font-medium text-sm transition-colors ${
                           statusFilter === filter.value
                             ? 'text-primary border-b-2 border-primary font-bold'
@@ -905,6 +939,11 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                         className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary placeholder-slate-500 dark:placeholder-slate-400 font-medium"
                         placeholder="Search by name, university..."
                         type="text"
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          setAppPage(1);
+                        }}
                       />
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500 dark:text-slate-400 text-[20px]">
                         search
@@ -989,7 +1028,13 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                               ))}
                           </div>
                           <div className="flex gap-2">
-                            <button className="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors bg-primary text-white hover:bg-primary-dark shadow-sm">
+                            <button
+                              onClick={() => {
+                                setSelectedApplicant(app);
+                                setShowApplicantModal(true);
+                              }}
+                              className="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors bg-primary text-white hover:bg-primary-dark shadow-sm"
+                            >
                               Review Application
                             </button>
                           </div>
@@ -1003,15 +1048,33 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
               {/* Pagination */}
               <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-6">
                 <div className="text-sm text-slate-500 dark:text-slate-400">
-                  Showing <span className="font-bold text-slate-900 dark:text-white">1</span> to{' '}
-                  <span className="font-bold text-slate-900 dark:text-white">6</span> of{' '}
-                  <span className="font-bold text-slate-900 dark:text-white">45</span> applicants
+                  Showing{' '}
+                  <span className="font-bold text-slate-900 dark:text-white">
+                    {(appPagination.page - 1) * appPagination.limit + 1}
+                  </span>{' '}
+                  to{' '}
+                  <span className="font-bold text-slate-900 dark:text-white">
+                    {Math.min(appPagination.page * appPagination.limit, appPagination.total)}
+                  </span>{' '}
+                  of{' '}
+                  <span className="font-bold text-slate-900 dark:text-white">
+                    {appPagination.total}
+                  </span>{' '}
+                  applicants
                 </div>
                 <div className="flex gap-2">
-                  <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button
+                    disabled={appPage <= 1}
+                    onClick={() => setAppPage((p) => Math.max(1, p - 1))}
+                    className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     Previous
                   </button>
-                  <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                  <button
+                    disabled={appPage >= appPagination.pages}
+                    onClick={() => setAppPage((p) => p + 1)}
+                    className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     Next
                   </button>
                 </div>
