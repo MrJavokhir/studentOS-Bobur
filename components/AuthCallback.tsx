@@ -65,14 +65,18 @@ export default function AuthCallback() {
             `Welcome${response.data.isNewUser ? '' : ' back'}, ${response.data.user.profile?.fullName || response.data.user.email}!`
           );
 
-          // Redirect based on role
-          const role = response.data.user.role;
-          if (role === 'ADMIN') {
-            navigate('/admin', { replace: true });
-          } else if (role === 'EMPLOYER') {
-            navigate('/employer', { replace: true });
+          // Redirect based on whether user is new (needs onboarding) or existing
+          if (response.data.isNewUser) {
+            navigate('/signup/step-2', { replace: true });
           } else {
-            navigate('/app', { replace: true });
+            const role = response.data.user.role;
+            if (role === 'ADMIN') {
+              navigate('/admin', { replace: true });
+            } else if (role === 'EMPLOYER') {
+              navigate('/employer', { replace: true });
+            } else {
+              navigate('/app', { replace: true });
+            }
           }
         }
       } catch (err) {

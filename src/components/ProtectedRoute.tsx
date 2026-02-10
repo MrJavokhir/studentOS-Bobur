@@ -45,6 +45,29 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return <Navigate to={`/signin?redirect=${returnUrl}`} replace />;
   }
 
+  // Onboarding guard: if user role is still default STUDENT and profile has no university/major,
+  // they likely haven't completed onboarding. Force them to /signup/step-2.
+  const onboardingPaths = ['/signup/step-2', '/verification-pending'];
+  const isOnOnboarding = onboardingPaths.some((p) => location.pathname.startsWith(p));
+
+  if (!isOnOnboarding && user.role === 'STUDENT') {
+    const profile = user.profile;
+    const hasCompletedOnboarding = profile && (profile.university || profile.major);
+    if (!hasCompletedOnboarding) {
+      return <Navigate to="/signup/step-2" replace />;
+    }
+  }
+
+  // If user already completed onboarding and tries to access /signup/step-2, redirect to dashboard
+  if (isOnOnboarding && location.pathname === '/signup/step-2') {
+    const profile = user.profile;
+    const hasCompletedOnboarding =
+      user.role !== 'STUDENT' || (profile && (profile.university || profile.major));
+    if (hasCompletedOnboarding) {
+      return <Navigate to={getRoleDefaultRoute(user.role)} replace />;
+    }
+  }
+
   // Check role-based access if roles are specified
   if (allowedRoles && allowedRoles.length > 0) {
     if (!allowedRoles.includes(user.role)) {

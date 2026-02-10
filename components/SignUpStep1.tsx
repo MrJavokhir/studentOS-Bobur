@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Screen, NavigationProps } from '../types';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { NavigationProps } from '../types';
 import { authApi } from '../src/services/api';
 import { signInWithGoogle, isSupabaseConfigured } from '../src/lib/supabase';
 import toast from 'react-hot-toast';
 import AuthLayout from './AuthLayout';
 
-export default function SignUpStep1({ navigateTo }: NavigationProps) {
+export default function SignUpStep1({ navigateTo: _navigateTo }: NavigationProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [fullName, setFullName] = useState('');
@@ -89,14 +89,12 @@ export default function SignUpStep1({ navigateTo }: NavigationProps) {
 
       toast.success('Account created successfully!');
 
-      // Navigate to onboarding
+      // Navigate to onboarding (role selection)
       const redirectTo = searchParams.get('redirect');
       if (redirectTo) {
         navigate(redirectTo, { replace: true });
-      } else if (navigateTo) {
-        navigateTo(Screen.SignUpStep2);
       } else {
-        navigate('/signup/step2', { replace: true });
+        navigate('/signup/step-2', { replace: true });
       }
     }
   };
