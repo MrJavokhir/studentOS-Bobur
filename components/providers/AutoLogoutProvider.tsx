@@ -2,12 +2,14 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../src/contexts/AuthContext';
 import toast from 'react-hot-toast';
 
-const IDLE_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
-const THROTTLE_MS = 30_000; // Only reset timer at most every 30 seconds
+const IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+const THROTTLE_MS = 500; // Only reset timer at most every 500ms
 
 const ACTIVITY_EVENTS: (keyof WindowEventMap)[] = [
   'mousemove',
+  'mousedown',
   'keydown',
+  'keypress',
   'click',
   'scroll',
   'touchstart',
@@ -17,7 +19,7 @@ const ACTIVITY_EVENTS: (keyof WindowEventMap)[] = [
  * AutoLogoutProvider
  *
  * Monitors user activity and automatically logs out
- * after 20 minutes of inactivity. Renders nothing —
+ * after 5 minutes of inactivity. Renders nothing —
  * just installs event listeners while the user is authenticated.
  */
 export default function AutoLogoutProvider({ children }: { children: React.ReactNode }) {
@@ -26,11 +28,14 @@ export default function AutoLogoutProvider({ children }: { children: React.React
   const lastResetRef = useRef<number>(Date.now());
 
   const handleLogout = useCallback(async () => {
-    toast('Session expired due to inactivity. Please log in again.', {
+    toast('You have been logged out due to 5 minutes of inactivity.', {
       icon: '🔒',
       duration: 5000,
     });
     await logout();
+    // Clear all storage to remove stale tokens
+    localStorage.clear();
+    sessionStorage.clear();
     window.location.href = '/signin';
   }, [logout]);
 
