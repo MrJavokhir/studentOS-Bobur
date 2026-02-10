@@ -63,7 +63,8 @@ const lazyRetry = (importFn: () => Promise<any>) => {
 const LandingPage = withNavigate(lazyRetry(() => import('../components/LandingPage')));
 const SignIn = withNavigate(lazyRetry(() => import('../components/SignIn')));
 const SignUpStep1 = withNavigate(lazyRetry(() => import('../components/SignUpStep1')));
-const SignUpStep2 = withNavigate(lazyRetry(() => import('../components/SignUpStep2')));
+const SignUpStep2 = lazyRetry(() => import('../components/SignUpStep2'));
+const VerificationPending = lazyRetry(() => import('../components/VerificationPending'));
 const AboutUs = withNavigate(lazyRetry(() => import('../components/AboutUs')));
 const Blog = withNavigate(lazyRetry(() => import('../components/Blog')));
 const BlogPost = withNavigate(lazyRetry(() => import('../components/BlogPost')));
@@ -170,6 +171,14 @@ export const router = createBrowserRouter([
         element: (
           <Wrap>
             <SignUpStep2 />
+          </Wrap>
+        ),
+      },
+      {
+        path: '/verification-pending',
+        element: (
+          <Wrap>
+            <VerificationPending />
           </Wrap>
         ),
       },

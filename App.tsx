@@ -42,7 +42,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col font-display">
       {currentScreen === Screen.LANDING && <LandingPage navigateTo={navigateTo} />}
       {currentScreen === Screen.SIGNUP_STEP_1 && <SignUpStep1 navigateTo={navigateTo} />}
-      {currentScreen === Screen.SIGNUP_STEP_2 && <SignUpStep2 navigateTo={navigateTo} />}
+      {currentScreen === Screen.SIGNUP_STEP_2 && <SignUpStep2 />}
       {currentScreen === Screen.DASHBOARD && <Dashboard navigateTo={navigateTo} />}
       {currentScreen === Screen.SCHOLARSHIPS && <ScholarshipFinder navigateTo={navigateTo} />}
       {currentScreen === Screen.JOBS && <JobFinder navigateTo={navigateTo} />}

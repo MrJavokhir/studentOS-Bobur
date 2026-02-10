@@ -67,12 +67,17 @@ const loginSchema = z.object({
 
 const onboardingSchema = z.object({
   body: z.object({
-    educationLevel: z.string().optional(),
+    role: z.enum(['student', 'educator', 'organization']),
+    // Student fields
     university: z.string().optional(),
-    graduationYear: z.number().optional(),
     major: z.string().optional(),
-    country: z.string().optional(),
-    goals: z.array(z.string()).optional(),
+    // Educator fields
+    institution: z.string().optional(),
+    department: z.string().optional(),
+    // Organization fields
+    companyName: z.string().optional(),
+    industry: z.string().optional(),
+    website: z.string().optional(),
   }),
 });
 
@@ -302,28 +307,86 @@ router.get('/me', authenticate, async (req: AuthenticatedRequest, res, next) => 
   }
 });
 
-// Complete onboarding (Step 2)
+// Complete onboarding (Step 2) - Role Selection & Profile Setup
 router.post(
   '/onboarding',
   authenticate,
   validate(onboardingSchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const { educationLevel, university, graduationYear, major, country, goals } = req.body;
+      const { role, university, major, institution, department, companyName, industry, website } =
+        req.body;
+      const userId = req.user!.id;
 
-      const profile = await prisma.studentProfile.update({
-        where: { userId: req.user!.id },
-        data: {
-          educationLevel: educationLevel?.toUpperCase(),
-          university,
-          graduationYear,
-          major,
-          country,
-          goals: goals || [],
-        },
+      let userRole: string;
+      let redirectTo: string;
+
+      if (role === 'student') {
+        userRole = 'STUDENT';
+        redirectTo = '/dashboard';
+        await prisma.studentProfile.update({
+          where: { userId },
+          data: { university: university || null, major: major || null },
+        });
+      } else if (role === 'educator') {
+        userRole = 'EDUCATOR';
+        redirectTo = '/educator-dashboard';
+        await prisma.studentProfile.update({
+          where: { userId },
+          data: { university: institution || null, major: department || null },
+        });
+      } else {
+        // Organization -> create employer profile
+        userRole = 'EMPLOYER';
+        redirectTo = '/verification-pending';
+
+        if (!companyName) {
+          res.status(400).json({ error: 'Company name is required for organizations' });
+          return;
+        }
+
+        // Check if employer profile already exists
+        const existing = await prisma.employerProfile.findUnique({ where: { userId } });
+        if (!existing) {
+          await prisma.employerProfile.create({
+            data: {
+              userId,
+              companyName,
+              industry: industry || null,
+              website: website || null,
+              verificationStatus: 'pending',
+            },
+          });
+        }
+      }
+
+      // Update user role
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { role: userRole as any },
+        include: { studentProfile: true, employerProfile: true },
       });
 
-      res.json({ profile });
+      // Generate new tokens with updated role
+      const accessToken = generateAccessToken({
+        userId: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role,
+      });
+      const refreshToken = await generateRefreshToken(updatedUser.id);
+      setAuthCookies(res, accessToken, refreshToken);
+
+      res.json({
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          profile: updatedUser.studentProfile || updatedUser.employerProfile,
+        },
+        accessToken,
+        refreshToken,
+        redirectTo,
+      });
     } catch (error) {
       next(error);
     }

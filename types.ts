@@ -1,4 +1,3 @@
-
 export enum Screen {
   LANDING = 'LANDING',
   SIGNUP_STEP_1 = 'SIGNUP_STEP_1',
@@ -29,7 +28,8 @@ export enum Screen {
   ADMIN_BLOG = 'ADMIN_BLOG',
   ADMIN_SETTINGS = 'ADMIN_SETTINGS',
   // Employer Screens
-  EMPLOYER_DASHBOARD = 'EMPLOYER_DASHBOARD'
+  EMPLOYER_DASHBOARD = 'EMPLOYER_DASHBOARD',
+  VERIFICATION_PENDING = 'VERIFICATION_PENDING',
 }
 
 export interface NavigationProps {

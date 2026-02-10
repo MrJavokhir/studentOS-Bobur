@@ -179,7 +179,22 @@ export const authApi = {
 
   me: () => api.get<{ id: string; email: string; role: string; profile: any }>('/auth/me'),
 
-  onboarding: (data: any) => api.post('/auth/onboarding', data),
+  onboarding: (data: {
+    role: 'student' | 'educator' | 'organization';
+    university?: string;
+    major?: string;
+    institution?: string;
+    department?: string;
+    companyName?: string;
+    industry?: string;
+    website?: string;
+  }) =>
+    api.post<{
+      user: any;
+      accessToken: string;
+      refreshToken: string;
+      redirectTo: string;
+    }>('/auth/onboarding', data),
 
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     api.post<{ message: string }>('/auth/change-password', data),
