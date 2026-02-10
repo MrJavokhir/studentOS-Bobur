@@ -535,28 +535,6 @@ model Budget {
 }
 
 // =============================================================================
-// NOTIFICATIONS
-// =============================================================================
-
-model Notification {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  title   String
-  message String
-  type    String  @default("INFO") // INFO, SUCCESS, WARNING, ERROR, SYSTEM
-  isRead  Boolean @default(false)
-  link    String? // Optional link to redirect
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([isRead])
-}
-
-// =============================================================================
 // AUDIT LOGS (Admin Accountability)
 // =============================================================================
 
