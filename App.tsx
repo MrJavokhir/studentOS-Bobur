@@ -28,6 +28,7 @@ import AdminRoles from './components/AdminRoles';
 import AdminBlog from './components/AdminBlog';
 import AdminProfile from './components/AdminProfile';
 import EmployerDashboard from './components/EmployerDashboard';
+import StudentSettings from './components/StudentSettings';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.LANDING);
@@ -59,6 +60,7 @@ export default function App() {
       {currentScreen === Screen.BLOG && <Blog navigateTo={navigateTo} />}
       {currentScreen === Screen.ABOUT && <AboutUs navigateTo={navigateTo} />}
       {currentScreen === Screen.PROFILE && <ProfileSettings navigateTo={navigateTo} />}
+      {currentScreen === Screen.SETTINGS && <StudentSettings navigateTo={navigateTo} />}
       {currentScreen === Screen.ADMIN_DASHBOARD && <AdminDashboard navigateTo={navigateTo} />}
       {currentScreen === Screen.ADMIN_EMPLOYERS && <AdminEmployers navigateTo={navigateTo} />}
       {currentScreen === Screen.ADMIN_PRICING && <AdminPricing navigateTo={navigateTo} />}

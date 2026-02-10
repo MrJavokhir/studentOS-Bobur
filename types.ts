@@ -30,6 +30,8 @@ export enum Screen {
   // Employer Screens
   EMPLOYER_DASHBOARD = 'EMPLOYER_DASHBOARD',
   VERIFICATION_PENDING = 'VERIFICATION_PENDING',
+  // Student Settings
+  SETTINGS = 'SETTINGS',
 }
 
 export interface NavigationProps {

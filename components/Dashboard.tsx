@@ -210,31 +210,73 @@ export default function Dashboard({ navigateTo }: NavigationProps) {
                 </div>
                 <div className="flex flex-col gap-1">
                   {recentApps.length > 0 ? (
-                    recentApps.map((app: any, i: number) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer group"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div
-                            className={`w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-300 flex-shrink-0`}
+                    recentApps.map((app: any, i: number) => {
+                      // Dynamic status badge
+                      const statusConfig: Record<
+                        string,
+                        { label: string; bg: string; text: string }
+                      > = {
+                        NEW: {
+                          label: 'Applied',
+                          bg: 'bg-blue-100 dark:bg-blue-900/30',
+                          text: 'text-blue-700 dark:text-blue-300',
+                        },
+                        SCREENING: {
+                          label: 'Screening',
+                          bg: 'bg-yellow-100 dark:bg-yellow-900/30',
+                          text: 'text-yellow-700 dark:text-yellow-300',
+                        },
+                        INTERVIEW: {
+                          label: 'Interview',
+                          bg: 'bg-purple-100 dark:bg-purple-900/30',
+                          text: 'text-purple-700 dark:text-purple-300',
+                        },
+                        OFFER: {
+                          label: 'Offer',
+                          bg: 'bg-green-100 dark:bg-green-900/30',
+                          text: 'text-green-700 dark:text-green-300',
+                        },
+                        REJECTED: {
+                          label: 'Rejected',
+                          bg: 'bg-red-100 dark:bg-red-900/30',
+                          text: 'text-red-700 dark:text-red-300',
+                        },
+                        WITHDRAWN: {
+                          label: 'Withdrawn',
+                          bg: 'bg-gray-100 dark:bg-gray-800',
+                          text: 'text-gray-600 dark:text-gray-400',
+                        },
+                      };
+                      const badge = statusConfig[app.status] || statusConfig.NEW;
+
+                      return (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div
+                              className={`w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-300 flex-shrink-0`}
+                            >
+                              <span className="material-symbols-outlined">work</span>
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors">
+                                {app.job.title}
+                              </h4>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {app.job.company} • {app.job.location}
+                              </p>
+                            </div>
+                          </div>
+                          <span
+                            className={`text-xs font-semibold whitespace-nowrap px-2.5 py-1 rounded-full ${badge.bg} ${badge.text}`}
                           >
-                            <span className="material-symbols-outlined">work</span>
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors">
-                              {app.job.title}
-                            </h4>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              {app.job.company} • {app.job.location}
-                            </p>
-                          </div>
+                            {badge.label}
+                          </span>
                         </div>
-                        <span className="text-xs text-gray-500 font-medium whitespace-nowrap">
-                          Applied
-                        </span>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="text-center py-6 text-gray-500 text-sm">
                       No applications yet. Go apply!

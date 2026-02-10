@@ -41,34 +41,39 @@ router.get('/profile', authenticate, async (req: AuthenticatedRequest, res, next
 });
 
 // Update profile
-router.patch('/profile', authenticate, validate(updateProfileSchema), async (req: AuthenticatedRequest, res, next) => {
-  try {
-    const data = req.body;
+router.patch(
+  '/profile',
+  authenticate,
+  validate(updateProfileSchema),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const data = req.body;
 
-    // Update student profile
-    const profile = await prisma.studentProfile.update({
-      where: { userId: req.user!.id },
-      data: {
-        ...data,
-        educationLevel: data.educationLevel?.toUpperCase(),
-      },
-    });
+      // Update student profile
+      const profile = await prisma.studentProfile.update({
+        where: { userId: req.user!.id },
+        data: {
+          ...data,
+          educationLevel: data.educationLevel?.toUpperCase(),
+        },
+      });
 
-    // Calculate and update profile completion
-    const completion = calculateProfileCompletion(profile);
-    await prisma.studentProfile.update({
-      where: { userId: req.user!.id },
-      data: { profileCompletion: completion },
-    });
+      // Calculate and update profile completion
+      const completion = calculateProfileCompletion(profile);
+      await prisma.studentProfile.update({
+        where: { userId: req.user!.id },
+        data: { profileCompletion: completion },
+      });
 
-    res.json({
-      ...profile,
-      profileCompletion: completion,
-    });
-  } catch (error) {
-    next(error);
+      res.json({
+        ...profile,
+        profileCompletion: completion,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 // Get dashboard data
 router.get('/dashboard', authenticate, async (req: AuthenticatedRequest, res, next) => {
@@ -134,7 +139,9 @@ router.get('/dashboard', authenticate, async (req: AuthenticatedRequest, res, ne
         weeklyCount: h.logs.length,
       })),
       stats: {
-        activeApplications: applications.filter((a) => a.status !== 'REJECTED' && a.status !== 'WITHDRAWN').length,
+        activeApplications: applications.filter(
+          (a) => a.status !== 'REJECTED' && a.status !== 'WITHDRAWN'
+        ).length,
         atsScore: profile?.atsScore || 0,
         habitsCompletedToday: todayLogs,
         profileCompletion: profile?.profileCompletion || 0,
@@ -144,5 +151,40 @@ router.get('/dashboard', authenticate, async (req: AuthenticatedRequest, res, ne
     next(error);
   }
 });
+
+// Claim Telegram credits (one-time +50)
+router.post(
+  '/claim-telegram-credits',
+  authenticate,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const userId = req.user!.id;
+
+      // Check if already claimed
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { telegramCredited: true },
+      });
+
+      if (user?.telegramCredited) {
+        return res.status(400).json({ error: 'Telegram credits already claimed' });
+      }
+
+      // Atomically increment credits and mark as claimed
+      const updated = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          creditBalance: { increment: 50 },
+          telegramCredited: true,
+        },
+        select: { creditBalance: true },
+      });
+
+      res.json({ creditBalance: updated.creditBalance, message: '+50 credits added!' });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;

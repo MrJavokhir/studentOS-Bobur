@@ -230,11 +230,11 @@ export const authApi = {
   },
 };
 
-// User API
 export const userApi = {
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data: any) => api.patch('/users/profile', data),
   getDashboard: () => api.get('/users/dashboard'),
+  claimTelegramCredits: () => api.post('/users/claim-telegram-credits'),
 };
 
 // Scholarships API
