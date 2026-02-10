@@ -22,6 +22,8 @@ const screenToPath: Record<Screen, string> = {
   [Screen.HABIT_TRACKER]: '/app/habit-tracker',
   [Screen.COMMUNITY]: '/app/community',
   [Screen.PROFILE]: '/app/profile',
+  [Screen.SETTINGS]: '/app/settings',
+  [Screen.FINANCE]: '/app/finance',
 
   [Screen.ADMIN_DASHBOARD]: '/admin',
   [Screen.ADMIN_EMPLOYERS]: '/admin/employers',
@@ -33,6 +35,7 @@ const screenToPath: Record<Screen, string> = {
   [Screen.ADMIN_SETTINGS]: '/admin/settings',
 
   [Screen.EMPLOYER_DASHBOARD]: '/employer',
+  [Screen.VERIFICATION_PENDING]: '/verification-pending',
 };
 
 type AnyComponent<P> = React.ComponentType<P> | React.LazyExoticComponent<React.ComponentType<P>>;
