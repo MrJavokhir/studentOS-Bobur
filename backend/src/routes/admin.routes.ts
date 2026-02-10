@@ -603,4 +603,51 @@ router.get('/audit-logs', async (req: AuthenticatedRequest, res, next) => {
   }
 });
 
+// ── Manual Credit Granting ──
+router.post('/grant-credits', async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { email, amount, reason } = req.body;
+
+    if (!email || !amount) {
+      return res.status(400).json({ error: 'Email and amount are required' });
+    }
+
+    const credits = parseInt(amount);
+    if (isNaN(credits) || credits <= 0) {
+      return res.status(400).json({ error: 'Amount must be a positive integer' });
+    }
+
+    // Find user by email
+    const targetUser = await prisma.user.findUnique({ where: { email } });
+    if (!targetUser) {
+      return res.status(404).json({ error: `User with email "${email}" not found` });
+    }
+
+    // Atomically increment credits
+    const updated = await prisma.user.update({
+      where: { id: targetUser.id },
+      data: { creditBalance: { increment: credits } },
+      select: { creditBalance: true, email: true },
+    });
+
+    // Log the action
+    await logAdminAction(req, 'GRANT_CREDITS', 'User', targetUser.id, {
+      email,
+      amount: credits,
+      reason: reason || 'Manual credit grant',
+      newBalance: updated.creditBalance,
+    });
+
+    res.json({
+      success: true,
+      email: updated.email,
+      creditsGranted: credits,
+      newBalance: updated.creditBalance,
+      message: `Granted ${credits} credits to ${email}`,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

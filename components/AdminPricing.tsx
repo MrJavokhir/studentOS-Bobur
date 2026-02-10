@@ -356,6 +356,16 @@ export default function AdminPricing({ navigateTo }: NavigationProps) {
                   <span className="text-sm font-medium whitespace-nowrap">Roles & Permissions</span>
                 )}
               </button>
+              <button
+                onClick={() => navigateTo(Screen.ADMIN_NOTIFICATIONS)}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors w-full ${!isSidebarExpanded ? 'justify-center' : 'text-left'}`}
+                title={!isSidebarExpanded ? 'Notifications' : ''}
+              >
+                <span className="material-symbols-outlined">notifications</span>
+                {isSidebarExpanded && (
+                  <span className="text-sm font-medium whitespace-nowrap">Notifications</span>
+                )}
+              </button>
             </nav>
           </div>
           <div className="flex flex-col gap-4 border-t border-slate-200 dark:border-slate-800 pt-4">
@@ -419,6 +429,82 @@ export default function AdminPricing({ navigateTo }: NavigationProps) {
               </button>
             </div>
           </header>
+
+          {/* Manual Credit Allocation */}
+          <section className="mb-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] p-6 shadow-sm">
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">
+                  account_balance_wallet
+                </span>
+                Manual Credit Allocation
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Grant credits to users manually — for rewards, refunds, or promotions
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-4 items-end">
+              <div className="md:col-span-2">
+                <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1 block">
+                  User Email
+                </label>
+                <input
+                  type="email"
+                  id="grant-email"
+                  placeholder="user@example.com"
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#151827] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1 block">
+                  Credits
+                </label>
+                <input
+                  type="number"
+                  id="grant-amount"
+                  placeholder="100"
+                  min="1"
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#151827] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+              <div>
+                <button
+                  onClick={async () => {
+                    const emailEl = document.getElementById('grant-email') as HTMLInputElement;
+                    const amountEl = document.getElementById('grant-amount') as HTMLInputElement;
+                    const email = emailEl?.value?.trim();
+                    const amount = parseInt(amountEl?.value);
+                    if (!email) {
+                      toast.error('Enter a user email');
+                      return;
+                    }
+                    if (!amount || amount <= 0) {
+                      toast.error('Enter a valid amount');
+                      return;
+                    }
+                    try {
+                      const { data, error } = await adminApi.grantCredits({ email, amount });
+                      if (error) {
+                        toast.error(error);
+                        return;
+                      }
+                      toast.success(
+                        `Granted ${amount} credits to ${email}. New balance: ${(data as any)?.newBalance}`
+                      );
+                      emailEl.value = '';
+                      amountEl.value = '';
+                    } catch {
+                      toast.error('Failed to grant credits');
+                    }
+                  }}
+                  className="w-full px-4 py-2.5 text-sm font-bold text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shadow-primary/30 flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-lg">redeem</span>
+                  Grant Credits
+                </button>
+              </div>
+            </div>
+          </section>
 
           {/* Global Configuration */}
           <section className="mb-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e2330] p-6 shadow-sm">

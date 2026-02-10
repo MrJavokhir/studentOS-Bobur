@@ -33,6 +33,7 @@ const screenToPath: Record<Screen, string> = {
   [Screen.ADMIN_ROLES]: '/admin/roles',
   [Screen.ADMIN_BLOG]: '/admin/blog',
   [Screen.ADMIN_SETTINGS]: '/admin/settings',
+  [Screen.ADMIN_NOTIFICATIONS]: '/admin/notifications',
 
   [Screen.EMPLOYER_DASHBOARD]: '/employer',
   [Screen.VERIFICATION_PENDING]: '/verification-pending',

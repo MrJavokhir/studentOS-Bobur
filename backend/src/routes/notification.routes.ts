@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import { z } from 'zod';
 import prisma from '../config/database.js';
@@ -27,10 +26,10 @@ router.get('/', async (req: AuthenticatedRequest, res, next) => {
       orderBy: { createdAt: 'desc' },
       take: 50, // Limit to last 50
     });
-    
+
     // Count unread
     const unreadCount = await prisma.notification.count({
-        where: { userId: req.user!.id, isRead: false }
+      where: { userId: req.user!.id, isRead: false },
     });
 
     res.json({ notifications, unreadCount });
@@ -55,34 +54,128 @@ router.patch('/:id/read', async (req: AuthenticatedRequest, res, next) => {
 
 // Mark ALL as read
 router.patch('/read-all', async (req: AuthenticatedRequest, res, next) => {
-    try {
-        await prisma.notification.updateMany({
-            where: { userId: req.user!.id, isRead: false },
-            data: { isRead: true }
-        });
-        res.json({ success: true });
-    } catch (error) {
-        next(error);
-    }
+  try {
+    await prisma.notification.updateMany({
+      where: { userId: req.user!.id, isRead: false },
+      data: { isRead: true },
+    });
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Create notification (internal usage or testing)
-router.post('/', validate(createNotificationSchema), async (req: AuthenticatedRequest, res, next) => {
+router.post(
+  '/',
+  validate(createNotificationSchema),
+  async (req: AuthenticatedRequest, res, next) => {
     try {
-        const { title, message, type, link } = req.body;
-        const notification = await prisma.notification.create({
-            data: {
-                userId: req.user!.id,
-                title,
-                message,
-                type: type || 'INFO',
-                link
-            }
-        });
-        res.json(notification);
+      const { title, message, type, link } = req.body;
+      const notification = await prisma.notification.create({
+        data: {
+          userId: req.user!.id,
+          title,
+          message,
+          type: type || 'INFO',
+          link,
+        },
+      });
+      res.json(notification);
     } catch (error) {
-        next(error);
+      next(error);
     }
+  }
+);
+
+// ── ADMIN: Send notification to specific user or broadcast ──
+router.post('/admin/send', authenticate, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    // Only admins can send
+    if (req.user!.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { email, broadcast, title, message, type } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+
+    const notificationType = type || 'INFO';
+
+    if (broadcast) {
+      // Send to ALL users
+      const users = await prisma.user.findMany({ select: { id: true } });
+      const data = users.map((u) => ({
+        userId: u.id,
+        title,
+        message: message || null,
+        type: notificationType,
+      }));
+      const result = await prisma.notification.createMany({ data });
+      return res.json({
+        success: true,
+        count: result.count,
+        message: `Sent to ${result.count} users`,
+      });
+    }
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required for targeted notification' });
+    }
+
+    // Find user by email
+    const targetUser = await prisma.user.findUnique({ where: { email } });
+    if (!targetUser) {
+      return res.status(404).json({ error: `User with email "${email}" not found` });
+    }
+
+    const notification = await prisma.notification.create({
+      data: {
+        userId: targetUser.id,
+        title,
+        message: message || null,
+        type: notificationType,
+      },
+    });
+
+    res.json({ success: true, notification, message: `Notification sent to ${email}` });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ── ADMIN: Notification history ──
+router.get('/admin/history', authenticate, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    if (req.user!.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 30;
+    const skip = (page - 1) * limit;
+
+    const [notifications, total] = await Promise.all([
+      prisma.notification.findMany({
+        include: {
+          user: { select: { email: true, studentProfile: { select: { fullName: true } } } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.notification.count(),
+    ]);
+
+    res.json({
+      notifications,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default router;

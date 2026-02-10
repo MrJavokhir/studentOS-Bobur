@@ -487,6 +487,34 @@ export const adminApi = {
   getSettings: () => api.get<{ success: boolean; data: Record<string, string> }>('/admin/settings'),
   updateSettings: (data: Record<string, string | number | boolean>) =>
     api.patch<{ success: boolean; data: Record<string, string> }>('/admin/settings', data),
+
+  // Manual Credit Granting
+  grantCredits: (data: { email: string; amount: number; reason?: string }) =>
+    api.post<{
+      success: boolean;
+      email: string;
+      creditsGranted: number;
+      newBalance: number;
+      message: string;
+    }>('/admin/grant-credits', data),
+
+  // Admin Notifications
+  sendNotification: (data: {
+    email?: string;
+    broadcast?: boolean;
+    title: string;
+    message?: string;
+    type?: string;
+  }) => api.post<any>('/notifications/admin/send', data),
+  getNotificationHistory: (params?: { page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) searchParams.append(key, String(value));
+      });
+    }
+    return api.get<any>(`/notifications/admin/history?${searchParams}`);
+  },
 };
 
 // Finance API
