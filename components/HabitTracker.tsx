@@ -135,7 +135,7 @@ export default function HabitTracker({ navigateTo }: NavigationProps) {
   const completionRate = stats?.completionRate || 0;
 
   const headerContent = (
-    <header className="h-20 px-8 flex items-center justify-between flex-shrink-0 bg-background-light dark:bg-background-dark z-10">
+    <header className="h-auto min-h-[5rem] px-4 md:px-8 py-3 md:py-0 flex flex-col md:flex-row md:items-center justify-between flex-shrink-0 bg-background-light dark:bg-background-dark z-10 gap-3">
       <div className="flex flex-col justify-center">
         <h2 className="text-2xl font-bold text-text-main dark:text-white flex items-center gap-3">
           Habit Tracker
@@ -172,10 +172,10 @@ export default function HabitTracker({ navigateTo }: NavigationProps) {
           </div>
         </div>
       ) : (
-        <div className="px-8 pb-8 pt-2">
+        <div className="px-4 md:px-8 pb-8 pt-2">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group">
                 <div className="flex justify-between items-start mb-2">
                   <span className="text-sm font-medium text-text-sub">Best Streak</span>

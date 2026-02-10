@@ -480,7 +480,7 @@ function AdminRoles({ navigateTo }: NavigationProps) {
                 </div>
               </div>
 
-              <div className="flex-1">
+              <div className="flex-1 overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-50">

@@ -39,7 +39,7 @@ export default function CoverLetterGenerator({ navigateTo }: NavigationProps) {
   };
 
   const headerContent = (
-    <header className="h-20 px-8 flex items-center justify-between flex-shrink-0 bg-background-light dark:bg-background-dark z-10 border-b border-gray-200 dark:border-gray-800">
+    <header className="h-auto min-h-[5rem] px-4 md:px-8 py-3 md:py-0 flex flex-col md:flex-row md:items-center justify-between flex-shrink-0 bg-background-light dark:bg-background-dark z-10 border-b border-gray-200 dark:border-gray-800 gap-3">
       <div className="flex flex-col justify-center">
         <div className="flex items-center gap-2">
           <h2 className="text-2xl font-bold text-text-main dark:text-white">

@@ -15,9 +15,18 @@ interface SidebarProps {
       avatarUrl?: string;
     };
   } | null;
+  /** Mobile drawer state */
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
-export default function Sidebar({ currentScreen, navigateTo, userData }: SidebarProps) {
+export default function Sidebar({
+  currentScreen,
+  navigateTo,
+  userData,
+  isMobileOpen = false,
+  onCloseMobile,
+}: SidebarProps) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { balance, isLoading: isLoadingCredits } = useCredits();
@@ -64,36 +73,27 @@ export default function Sidebar({ currentScreen, navigateTo, userData }: Sidebar
   // Use shared navigation config (single source of truth)
   const navItems = STUDENT_NAV_ITEMS;
 
-  return (
-    <aside
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      className={`${isSidebarExpanded ? 'w-64' : 'w-20'} bg-card-light dark:bg-card-dark border-r border-gray-200 dark:border-gray-800 flex flex-col justify-between transition-all duration-300 ease-in-out hidden md:flex items-center py-6 z-20 flex-shrink-0 relative`}
-    >
-      {/* Lock/Unlock Toggle */}
-      <button
-        onClick={() => setIsSidebarLocked(!isSidebarLocked)}
-        className={`absolute -right-3 top-10 bg-card-light dark:bg-card-dark border border-gray-200 dark:border-gray-700 text-text-sub hover:text-primary rounded-full p-1 shadow-md transition-colors z-50 flex items-center justify-center size-6 ${isSidebarLocked ? 'text-primary border-primary' : ''}`}
-        title={isSidebarLocked ? 'Unlock Sidebar' : 'Lock Sidebar Open'}
-      >
-        <span className="material-symbols-outlined text-[14px]">
-          {isSidebarLocked ? 'chevron_left' : 'chevron_right'}
-        </span>
-      </button>
+  const handleNavClick = (screen: Screen) => {
+    navigateTo(screen);
+    onCloseMobile?.();
+  };
 
+  /** Shared sidebar content – rendered both in desktop aside and mobile drawer */
+  const sidebarContent = (expanded: boolean) => (
+    <>
       <div
-        className={`flex flex-col ${isSidebarExpanded ? 'items-start px-4' : 'items-center'} gap-8 w-full transition-all duration-300`}
+        className={`flex flex-col ${expanded ? 'items-start px-4' : 'items-center'} gap-8 w-full transition-all duration-300`}
       >
         {/* Logo */}
         <div
-          className={`flex items-center gap-3 w-full ${isSidebarExpanded ? 'justify-start' : 'justify-center'}`}
-          onClick={() => navigateTo(Screen.LANDING)}
+          className={`flex items-center gap-3 w-full ${expanded ? 'justify-start' : 'justify-center'}`}
+          onClick={() => handleNavClick(Screen.LANDING)}
         >
           <div className="size-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 cursor-pointer group hover:scale-105 transition-transform flex-shrink-0">
             <span className="material-symbols-outlined text-white text-2xl">school</span>
           </div>
           <div
-            className={`flex flex-col overflow-hidden transition-all duration-300 ${isSidebarExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}
+            className={`flex flex-col overflow-hidden transition-all duration-300 ${expanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}
           >
             <h1 className="text-lg font-bold leading-none tracking-tight whitespace-nowrap">
               StudentOS
@@ -114,26 +114,26 @@ export default function Sidebar({ currentScreen, navigateTo, userData }: Sidebar
 
         {/* Navigation */}
         <nav
-          className={`flex flex-col ${isSidebarExpanded ? 'items-stretch' : 'items-center'} space-y-2 w-full`}
+          className={`flex flex-col ${expanded ? 'items-stretch' : 'items-center'} space-y-2 w-full`}
         >
           {navItems.map((item, idx) => {
             const isActive = currentScreen === item.screen;
             return (
               <button
                 key={idx}
-                onClick={() => navigateTo(item.screen)}
-                className={`flex items-center ${isSidebarExpanded ? 'gap-3 px-3 py-2.5 w-full' : 'justify-center p-3 size-10'} rounded-lg transition-colors group relative ${isActive ? 'bg-primary/10 text-primary' : 'text-text-sub hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-text-main dark:hover:text-white'}`}
-                title={!isSidebarExpanded ? item.label : ''}
+                onClick={() => handleNavClick(item.screen)}
+                className={`flex items-center ${expanded ? 'gap-3 px-3 py-2.5 w-full' : 'justify-center p-3 size-10'} rounded-lg transition-colors group relative ${isActive ? 'bg-primary/10 text-primary' : 'text-text-sub hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-text-main dark:hover:text-white'}`}
+                title={!expanded ? item.label : ''}
               >
                 <span
-                  className={`material-symbols-outlined ${isActive ? 'icon-filled' : 'group-hover:text-primary'} ${!isSidebarExpanded ? 'text-2xl' : 'text-[20px]'}`}
+                  className={`material-symbols-outlined ${isActive ? 'icon-filled' : 'group-hover:text-primary'} ${!expanded ? 'text-2xl' : 'text-[20px]'}`}
                 >
                   {item.icon}
                 </span>
-                {isSidebarExpanded && (
+                {expanded && (
                   <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
                 )}
-                {!isSidebarExpanded && (
+                {!expanded && (
                   <span className="absolute left-14 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
                     {item.label}
                   </span>
@@ -146,26 +146,26 @@ export default function Sidebar({ currentScreen, navigateTo, userData }: Sidebar
 
       {/* User Profile & Logout */}
       <div
-        className={`flex flex-col ${isSidebarExpanded ? 'items-stretch px-4' : 'items-center px-2'} space-y-2 w-full mt-auto`}
+        className={`flex flex-col ${expanded ? 'items-stretch px-4' : 'items-center px-2'} space-y-2 w-full mt-auto`}
       >
         {/* Logout Button */}
         <button
           onClick={handleLogout}
           disabled={isLoggingOut}
-          className={`flex items-center ${isSidebarExpanded ? 'gap-3 px-3 py-2.5 w-full' : 'justify-center p-3 size-10'} rounded-lg transition-colors group relative text-text-sub hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400`}
-          title={!isSidebarExpanded ? 'Log Out' : ''}
+          className={`flex items-center ${expanded ? 'gap-3 px-3 py-2.5 w-full' : 'justify-center p-3 size-10'} rounded-lg transition-colors group relative text-text-sub hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400`}
+          title={!expanded ? 'Log Out' : ''}
         >
           <span
-            className={`material-symbols-outlined ${isLoggingOut ? 'animate-spin' : ''} ${!isSidebarExpanded ? 'text-2xl' : 'text-[20px]'}`}
+            className={`material-symbols-outlined ${isLoggingOut ? 'animate-spin' : ''} ${!expanded ? 'text-2xl' : 'text-[20px]'}`}
           >
             {isLoggingOut ? 'progress_activity' : 'logout'}
           </span>
-          {isSidebarExpanded && (
+          {expanded && (
             <span className="text-sm font-medium whitespace-nowrap">
               {isLoggingOut ? 'Logging out...' : 'Log Out'}
             </span>
           )}
-          {!isSidebarExpanded && (
+          {!expanded && (
             <span className="absolute left-14 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
               Log Out
             </span>
@@ -174,15 +174,15 @@ export default function Sidebar({ currentScreen, navigateTo, userData }: Sidebar
 
         {/* User Profile */}
         <div
-          onClick={() => navigateTo(Screen.PROFILE)}
-          className={`flex items-center ${isSidebarExpanded ? 'gap-3 px-3 py-2 w-full' : 'justify-center size-10'} rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer`}
+          onClick={() => handleNavClick(Screen.PROFILE)}
+          className={`flex items-center ${expanded ? 'gap-3 px-3 py-2 w-full' : 'justify-center size-10'} rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer`}
         >
           <div
             className="size-8 rounded-full bg-gray-200 bg-cover bg-center ring-2 ring-white dark:ring-gray-700 flex-shrink-0"
             style={{ backgroundImage: `url('${avatarUrl}')` }}
           />
           <div
-            className={`flex flex-col overflow-hidden transition-all duration-300 ${isSidebarExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}
+            className={`flex flex-col overflow-hidden transition-all duration-300 ${expanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}
           >
             <span className="text-sm font-bold text-text-main dark:text-white truncate">
               {fullName}
@@ -191,6 +191,49 @@ export default function Sidebar({ currentScreen, navigateTo, userData }: Sidebar
           </div>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* ── Desktop Sidebar ── */}
+      <aside
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className={`${isSidebarExpanded ? 'w-64' : 'w-20'} bg-card-light dark:bg-card-dark border-r border-gray-200 dark:border-gray-800 flex-col justify-between transition-all duration-300 ease-in-out hidden md:flex items-center py-6 z-20 flex-shrink-0 relative`}
+      >
+        {/* Lock/Unlock Toggle */}
+        <button
+          onClick={() => setIsSidebarLocked(!isSidebarLocked)}
+          className={`absolute -right-3 top-10 bg-card-light dark:bg-card-dark border border-gray-200 dark:border-gray-700 text-text-sub hover:text-primary rounded-full p-1 shadow-md transition-colors z-50 flex items-center justify-center size-6 ${isSidebarLocked ? 'text-primary border-primary' : ''}`}
+          title={isSidebarLocked ? 'Unlock Sidebar' : 'Lock Sidebar Open'}
+        >
+          <span className="material-symbols-outlined text-[14px]">
+            {isSidebarLocked ? 'chevron_left' : 'chevron_right'}
+          </span>
+        </button>
+
+        {sidebarContent(isSidebarExpanded)}
+      </aside>
+
+      {/* ── Mobile Drawer ── */}
+      {isMobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCloseMobile} />
+          {/* Drawer panel */}
+          <aside className="absolute inset-y-0 left-0 w-72 bg-card-light dark:bg-card-dark flex flex-col justify-between py-6 shadow-2xl animate-slide-in-left">
+            {/* Close button */}
+            <button
+              onClick={onCloseMobile}
+              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <span className="material-symbols-outlined text-text-sub">close</span>
+            </button>
+            {sidebarContent(true)}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

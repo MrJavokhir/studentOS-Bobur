@@ -39,6 +39,7 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
   const [showPostJobModal, setShowPostJobModal] = useState(false);
   const [showApplicantModal, setShowApplicantModal] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState<any>(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'dashboard') fetchDashboardData();
@@ -205,8 +206,8 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
 
   return (
     <div className="flex h-screen w-full bg-[#fafafa] dark:bg-background-dark text-text-main dark:text-white font-display overflow-hidden">
-      {/* Sidebar */}
-      <aside className="flex w-64 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-card-dark transition-colors duration-200 flex-shrink-0">
+      {/* ── Desktop Sidebar ── */}
+      <aside className="hidden md:flex w-64 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-card-dark transition-colors duration-200 flex-shrink-0">
         <div className="flex h-full flex-col justify-between p-4">
           <div className="flex flex-col gap-6">
             <div
@@ -328,8 +329,130 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
         </div>
       </aside>
 
+      {/* ── Mobile Sidebar Drawer ── */}
+      {isMobileSidebarOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+          <aside className="absolute inset-y-0 left-0 w-72 bg-white dark:bg-card-dark flex flex-col shadow-2xl animate-slide-in-left">
+            <div className="flex h-full flex-col justify-between p-4">
+              <div className="flex flex-col gap-6">
+                <div className="flex items-center justify-between">
+                  <div
+                    className="flex items-center gap-3 px-2 cursor-pointer"
+                    onClick={() => navigateTo(Screen.LANDING)}
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white shadow-sm shadow-primary/30">
+                      <span className="material-symbols-outlined text-[20px]">school</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <h1 className="text-base font-bold leading-tight text-slate-900 dark:text-white tracking-tight">
+                        StudentOS
+                      </h1>
+                      <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                        Employer Console
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-slate-500">close</span>
+                  </button>
+                </div>
+
+                <nav className="flex flex-col gap-1.5">
+                  {[
+                    { id: 'dashboard' as const, icon: 'dashboard', label: 'Dashboard' },
+                    { id: 'jobs' as const, icon: 'work_history', label: 'My Jobs' },
+                    { id: 'students' as const, icon: 'person_search', label: 'Student Profiles' },
+                    { id: 'company' as const, icon: 'business', label: 'Company Profile' },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveTab(item.id);
+                        setIsMobileSidebarOpen(false);
+                      }}
+                      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${activeTab === item.id ? 'bg-primary/10 text-primary dark:text-white dark:bg-primary/20' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                    >
+                      <span
+                        className={`material-symbols-outlined text-[20px] ${activeTab === item.id ? 'fill-1' : ''}`}
+                      >
+                        {item.icon}
+                      </span>
+                      <span
+                        className={`text-sm ${activeTab === item.id ? 'font-semibold' : 'font-medium'}`}
+                      >
+                        {item.label}
+                      </span>
+                    </button>
+                  ))}
+                </nav>
+              </div>
+
+              <div className="flex flex-col gap-4 border-t border-slate-100 dark:border-slate-800 pt-4">
+                <button
+                  onClick={() => {
+                    setActiveTab('profile');
+                    setIsMobileSidebarOpen(false);
+                  }}
+                  className={`flex items-center gap-3 px-2 py-2 rounded-lg transition-all cursor-pointer ${activeTab === 'profile' ? 'bg-primary/10' : 'hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                >
+                  <div
+                    className={`h-9 w-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-sm border-2 ${activeTab === 'profile' ? 'border-primary' : 'border-white dark:border-slate-700'} shadow-sm`}
+                  >
+                    {getInitials(company.companyName || 'HR')}
+                  </div>
+                  <div className="flex flex-col overflow-hidden text-left">
+                    <p
+                      className={`text-sm font-bold truncate ${activeTab === 'profile' ? 'text-primary' : 'text-slate-900 dark:text-white'}`}
+                    >
+                      {company.companyName || 'TechFlow HR'}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                      Hiring Manager
+                    </p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => navigateTo(Screen.SIGN_IN)}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-50 dark:bg-white/5 p-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px]">logout</span>
+                  Logout
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
       <main className="flex flex-1 flex-col overflow-y-auto bg-[#fafafa] dark:bg-background-dark">
-        <div className="mx-auto w-full max-w-[1600px] px-8 py-8">
+        {/* Mobile header */}
+        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-card-dark border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="Open menu"
+          >
+            <span className="material-symbols-outlined text-slate-900 dark:text-white">menu</span>
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="size-7 rounded-lg bg-primary flex items-center justify-center shadow-sm shadow-primary/20">
+              <span className="material-symbols-outlined text-white text-[16px]">school</span>
+            </div>
+            <span className="text-sm font-bold text-slate-900 dark:text-white">
+              Employer Console
+            </span>
+          </div>
+          <div className="w-10" />
+        </div>
+
+        <div className="mx-auto w-full max-w-[1600px] px-4 py-4 md:px-8 md:py-8">
           {activeTab === 'dashboard' && (
             <>
               {/* Header */}

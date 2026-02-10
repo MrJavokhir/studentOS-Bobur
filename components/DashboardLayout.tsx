@@ -28,6 +28,7 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     fetchUserData();
@@ -59,8 +60,35 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-background-light dark:bg-background-dark text-text-main dark:text-white font-display overflow-hidden relative">
-      <Sidebar currentScreen={currentScreen} navigateTo={navigateTo} userData={userData} />
+      <Sidebar
+        currentScreen={currentScreen}
+        navigateTo={navigateTo}
+        userData={userData}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+      />
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa] dark:bg-background-dark">
+        {/* Mobile Header – visible only on small screens */}
+        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-card-light dark:bg-card-dark border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            aria-label="Open navigation menu"
+          >
+            <span className="material-symbols-outlined text-text-main dark:text-white">menu</span>
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="size-8 rounded-lg bg-primary flex items-center justify-center shadow-sm shadow-primary/20">
+              <span className="material-symbols-outlined text-white text-[18px]">school</span>
+            </div>
+            <span className="text-base font-bold text-text-main dark:text-white tracking-tight">
+              StudentOS
+            </span>
+          </div>
+          {/* Spacer to keep logo centered */}
+          <div className="w-10" />
+        </div>
+
         {headerContent}
         <div className="flex-1 overflow-y-auto">{children}</div>
       </main>
