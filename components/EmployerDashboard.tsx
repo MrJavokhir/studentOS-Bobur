@@ -3,6 +3,7 @@ import { Screen, NavigationProps } from '../types';
 import { employerApi, jobApi } from '../src/services/api';
 import { downloadCSV } from '../src/utils/csv';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../src/contexts/AuthContext';
 import PostJobModal from './PostJobModal';
 import ViewApplicantModal from './ViewApplicantModal';
 
@@ -14,9 +15,11 @@ interface EmployerStats {
 }
 
 export default function EmployerDashboard({ navigateTo }: NavigationProps) {
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'students' | 'company' | 'jobs' | 'profile'
+    'dashboard' | 'jobs' | 'students' | 'company' | 'profile'
   >('dashboard');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [stats, setStats] = useState<EmployerStats | null>(null);
   const [recentApps, setRecentApps] = useState<any[]>([]);
   const [jobs, setJobs] = useState<any[]>([]);
@@ -319,11 +322,29 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
               </span>
             </button>
             <button
-              onClick={() => navigateTo(Screen.SIGN_IN)}
+              onClick={async () => {
+                setIsLoggingOut(true);
+                try {
+                  await logout();
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  toast.success('Logged out successfully');
+                  window.location.href = '/signin';
+                } catch (error) {
+                  console.error('Logout failed:', error);
+                  toast.error('Logout failed');
+                  setIsLoggingOut(false);
+                }
+              }}
+              disabled={isLoggingOut}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-50 dark:bg-white/5 p-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
             >
-              <span className="material-symbols-outlined text-[18px]">logout</span>
-              Logout
+              <span
+                className={`material-symbols-outlined text-[18px] ${isLoggingOut ? 'animate-spin' : ''}`}
+              >
+                {isLoggingOut ? 'progress_activity' : 'logout'}
+              </span>
+              {isLoggingOut ? 'Logging out...' : 'Logout'}
             </button>
           </div>
         </div>
@@ -419,11 +440,29 @@ export default function EmployerDashboard({ navigateTo }: NavigationProps) {
                   </div>
                 </button>
                 <button
-                  onClick={() => navigateTo(Screen.SIGN_IN)}
+                  onClick={async () => {
+                    setIsLoggingOut(true);
+                    try {
+                      await logout();
+                      localStorage.clear();
+                      sessionStorage.clear();
+                      toast.success('Logged out successfully');
+                      window.location.href = '/signin';
+                    } catch (error) {
+                      console.error('Logout failed:', error);
+                      toast.error('Logout failed');
+                      setIsLoggingOut(false);
+                    }
+                  }}
+                  disabled={isLoggingOut}
                   className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-50 dark:bg-white/5 p-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[18px]">logout</span>
-                  Logout
+                  <span
+                    className={`material-symbols-outlined text-[18px] ${isLoggingOut ? 'animate-spin' : ''}`}
+                  >
+                    {isLoggingOut ? 'progress_activity' : 'logout'}
+                  </span>
+                  {isLoggingOut ? 'Logging out...' : 'Logout'}
                 </button>
               </div>
             </div>
