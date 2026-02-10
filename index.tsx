@@ -8,6 +8,7 @@ import { router } from './src/router';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { CreditProvider } from './src/contexts/CreditContext';
+import AutoLogoutProvider from './components/providers/AutoLogoutProvider';
 
 const queryClient = new QueryClient();
 
@@ -21,9 +22,11 @@ ReactDOM.createRoot(rootElement).render(
     <ThemeProvider defaultTheme="light" enableSystem={false}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <CreditProvider>
-            <RouterProvider router={router} />
-          </CreditProvider>
+          <AutoLogoutProvider>
+            <CreditProvider>
+              <RouterProvider router={router} />
+            </CreditProvider>
+          </AutoLogoutProvider>
         </AuthProvider>
         <Toaster position="top-right" />
       </QueryClientProvider>
