@@ -7,21 +7,43 @@ import {
   Experience,
   Education,
   Language,
+  Project,
+  Volunteering,
+  Award,
+  Publication,
+  CustomSection,
+  CustomItem,
 } from '../../types/cv';
-import { ModernTemplate, MinimalistTemplate, ProfessionalTemplate } from './CVTemplates';
+import {
+  ModernTemplate,
+  MinimalistTemplate,
+  ProfessionalTemplate,
+  EuropassTemplate,
+  GrantTemplate,
+  TechTemplate,
+} from './CVTemplates';
 
 const STORAGE_KEY = 'studentos_cv_draft';
 
-// Accordion Section Component
+// ─── Re-usable sub-components ────────────────────────────────────────────────
+
 interface AccordionProps {
   title: string;
   icon: string;
   isOpen: boolean;
   onToggle: () => void;
   children: React.ReactNode;
+  onRemove?: () => void;
 }
 
-const Accordion: React.FC<AccordionProps> = ({ title, icon, isOpen, onToggle, children }) => (
+const Accordion: React.FC<AccordionProps> = ({
+  title,
+  icon,
+  isOpen,
+  onToggle,
+  children,
+  onRemove,
+}) => (
   <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm bg-white dark:bg-slate-800/50">
     <button
       onClick={onToggle}
@@ -31,18 +53,30 @@ const Accordion: React.FC<AccordionProps> = ({ title, icon, isOpen, onToggle, ch
         <span className="material-symbols-outlined text-primary text-sm">{icon}</span>
         <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{title}</span>
       </div>
-      <span
-        className="material-symbols-outlined text-slate-400 text-sm transition-transform"
-        style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0)' }}
-      >
-        expand_more
-      </span>
+      <div className="flex items-center gap-1">
+        {onRemove && (
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            className="material-symbols-outlined text-slate-400 hover:text-red-500 text-sm cursor-pointer p-1"
+          >
+            close
+          </span>
+        )}
+        <span
+          className="material-symbols-outlined text-slate-400 text-sm transition-transform"
+          style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0)' }}
+        >
+          expand_more
+        </span>
+      </div>
     </button>
     {isOpen && <div className="p-4 space-y-4">{children}</div>}
   </div>
 );
 
-// Form Input Component
 interface InputProps {
   label: string;
   value: string;
@@ -66,7 +100,6 @@ const Input: React.FC<InputProps> = ({ label, value, onChange, placeholder, type
   </div>
 );
 
-// Textarea Component
 interface TextareaProps {
   label: string;
   value: string;
@@ -90,7 +123,8 @@ const Textarea: React.FC<TextareaProps> = ({ label, value, onChange, placeholder
   </div>
 );
 
-// Skills Tag Input
+// ─── Skills Tag Input ────────────────────────────────────────────────────────
+
 interface SkillsInputProps {
   skills: string[];
   onChange: (skills: string[]) => void;
@@ -147,14 +181,13 @@ const SkillsInput: React.FC<SkillsInputProps> = ({ skills, onChange }) => {
   );
 };
 
-// Experience Item Editor
-interface ExperienceItemProps {
+// ─── Item Editors ────────────────────────────────────────────────────────────
+
+const ExperienceItem: React.FC<{
   exp: Experience;
   onChange: (exp: Experience) => void;
   onRemove: () => void;
-}
-
-const ExperienceItem: React.FC<ExperienceItemProps> = ({ exp, onChange, onRemove }) => (
+}> = ({ exp, onChange, onRemove }) => (
   <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg space-y-3 relative">
     <button
       type="button"
@@ -217,14 +250,11 @@ const ExperienceItem: React.FC<ExperienceItemProps> = ({ exp, onChange, onRemove
   </div>
 );
 
-// Education Item Editor
-interface EducationItemProps {
+const EducationItem: React.FC<{
   edu: Education;
   onChange: (edu: Education) => void;
   onRemove: () => void;
-}
-
-const EducationItem: React.FC<EducationItemProps> = ({ edu, onChange, onRemove }) => (
+}> = ({ edu, onChange, onRemove }) => (
   <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg space-y-3 relative">
     <button
       type="button"
@@ -264,14 +294,11 @@ const EducationItem: React.FC<EducationItemProps> = ({ edu, onChange, onRemove }
   </div>
 );
 
-// Language Item Editor
-interface LanguageItemProps {
+const LanguageItem: React.FC<{
   lang: Language;
   onChange: (lang: Language) => void;
   onRemove: () => void;
-}
-
-const LanguageItem: React.FC<LanguageItemProps> = ({ lang, onChange, onRemove }) => (
+}> = ({ lang, onChange, onRemove }) => (
   <div className="flex gap-3 items-center">
     <input
       type="text"
@@ -300,12 +327,310 @@ const LanguageItem: React.FC<LanguageItemProps> = ({ lang, onChange, onRemove })
   </div>
 );
 
-// Main CV Builder Component
+const ProjectItem: React.FC<{
+  item: Project;
+  onChange: (item: Project) => void;
+  onRemove: () => void;
+}> = ({ item, onChange, onRemove }) => (
+  <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg space-y-3 relative">
+    <button
+      type="button"
+      onClick={onRemove}
+      className="absolute top-2 right-2 text-slate-400 hover:text-red-500"
+    >
+      <span className="material-symbols-outlined text-sm">delete</span>
+    </button>
+    <Input
+      label="Project Title"
+      value={item.title}
+      onChange={(v) => onChange({ ...item, title: v })}
+      placeholder="My Awesome Project"
+    />
+    <Input
+      label="Technologies"
+      value={item.technologies}
+      onChange={(v) => onChange({ ...item, technologies: v })}
+      placeholder="React, Node.js, PostgreSQL"
+    />
+    <Input
+      label="URL"
+      value={item.url}
+      onChange={(v) => onChange({ ...item, url: v })}
+      placeholder="https://github.com/..."
+    />
+    <Textarea
+      label="Description"
+      value={item.description}
+      onChange={(v) => onChange({ ...item, description: v })}
+      placeholder="What the project does..."
+      rows={3}
+    />
+  </div>
+);
+
+const VolunteeringItem: React.FC<{
+  item: Volunteering;
+  onChange: (item: Volunteering) => void;
+  onRemove: () => void;
+}> = ({ item, onChange, onRemove }) => (
+  <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg space-y-3 relative">
+    <button
+      type="button"
+      onClick={onRemove}
+      className="absolute top-2 right-2 text-slate-400 hover:text-red-500"
+    >
+      <span className="material-symbols-outlined text-sm">delete</span>
+    </button>
+    <div className="grid grid-cols-2 gap-3">
+      <Input
+        label="Role"
+        value={item.role}
+        onChange={(v) => onChange({ ...item, role: v })}
+        placeholder="Volunteer Tutor"
+      />
+      <Input
+        label="Organization"
+        value={item.organization}
+        onChange={(v) => onChange({ ...item, organization: v })}
+        placeholder="Red Cross"
+      />
+    </div>
+    <div className="grid grid-cols-2 gap-3">
+      <Input
+        label="Start Date"
+        value={item.startDate}
+        onChange={(v) => onChange({ ...item, startDate: v })}
+        placeholder="Jan 2021"
+      />
+      <Input
+        label="End Date"
+        value={item.endDate}
+        onChange={(v) => onChange({ ...item, endDate: v })}
+        placeholder="Dec 2022"
+      />
+    </div>
+    <Textarea
+      label="Description"
+      value={item.description}
+      onChange={(v) => onChange({ ...item, description: v })}
+      placeholder="Responsibilities..."
+      rows={3}
+    />
+  </div>
+);
+
+const AwardItem: React.FC<{
+  item: Award;
+  onChange: (item: Award) => void;
+  onRemove: () => void;
+}> = ({ item, onChange, onRemove }) => (
+  <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg space-y-3 relative">
+    <button
+      type="button"
+      onClick={onRemove}
+      className="absolute top-2 right-2 text-slate-400 hover:text-red-500"
+    >
+      <span className="material-symbols-outlined text-sm">delete</span>
+    </button>
+    <div className="grid grid-cols-2 gap-3">
+      <Input
+        label="Award Title"
+        value={item.title}
+        onChange={(v) => onChange({ ...item, title: v })}
+        placeholder="Dean's List"
+      />
+      <Input
+        label="Issuer"
+        value={item.issuer}
+        onChange={(v) => onChange({ ...item, issuer: v })}
+        placeholder="University of..."
+      />
+    </div>
+    <Input
+      label="Date"
+      value={item.date}
+      onChange={(v) => onChange({ ...item, date: v })}
+      placeholder="2023"
+    />
+    <Textarea
+      label="Description"
+      value={item.description}
+      onChange={(v) => onChange({ ...item, description: v })}
+      placeholder="Optional details..."
+      rows={2}
+    />
+  </div>
+);
+
+const PublicationItem: React.FC<{
+  item: Publication;
+  onChange: (item: Publication) => void;
+  onRemove: () => void;
+}> = ({ item, onChange, onRemove }) => (
+  <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg space-y-3 relative">
+    <button
+      type="button"
+      onClick={onRemove}
+      className="absolute top-2 right-2 text-slate-400 hover:text-red-500"
+    >
+      <span className="material-symbols-outlined text-sm">delete</span>
+    </button>
+    <Input
+      label="Title"
+      value={item.title}
+      onChange={(v) => onChange({ ...item, title: v })}
+      placeholder="Research Paper Title"
+    />
+    <div className="grid grid-cols-2 gap-3">
+      <Input
+        label="Publisher"
+        value={item.publisher}
+        onChange={(v) => onChange({ ...item, publisher: v })}
+        placeholder="IEEE, Springer..."
+      />
+      <Input
+        label="Date"
+        value={item.date}
+        onChange={(v) => onChange({ ...item, date: v })}
+        placeholder="2023"
+      />
+    </div>
+    <Input
+      label="URL"
+      value={item.url}
+      onChange={(v) => onChange({ ...item, url: v })}
+      placeholder="https://doi.org/..."
+    />
+  </div>
+);
+
+const CustomSectionEditor: React.FC<{
+  section: CustomSection;
+  onChange: (section: CustomSection) => void;
+  onRemove: () => void;
+}> = ({ section, onChange, onRemove }) => {
+  const addItem = () => {
+    onChange({
+      ...section,
+      items: [...section.items, { id: generateId(), title: '', subtitle: '', description: '' }],
+    });
+  };
+  const updateItem = (id: string, updated: CustomItem) => {
+    onChange({ ...section, items: section.items.map((i) => (i.id === id ? updated : i)) });
+  };
+  const removeItem = (id: string) => {
+    onChange({ ...section, items: section.items.filter((i) => i.id !== id) });
+  };
+
+  return (
+    <Accordion
+      title={section.sectionTitle || 'Custom Section'}
+      icon="tune"
+      isOpen={true}
+      onToggle={() => {}}
+      onRemove={onRemove}
+    >
+      <Input
+        label="Section Title"
+        value={section.sectionTitle}
+        onChange={(v) => onChange({ ...section, sectionTitle: v })}
+        placeholder="Certifications, Hobbies, etc."
+      />
+      <div className="space-y-3 mt-3">
+        {section.items.map((item) => (
+          <div
+            key={item.id}
+            className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg space-y-2 relative"
+          >
+            <button
+              type="button"
+              onClick={() => removeItem(item.id)}
+              className="absolute top-2 right-2 text-slate-400 hover:text-red-500"
+            >
+              <span className="material-symbols-outlined text-sm">delete</span>
+            </button>
+            <Input
+              label="Title"
+              value={item.title}
+              onChange={(v) => updateItem(item.id, { ...item, title: v })}
+              placeholder="Item title"
+            />
+            <Input
+              label="Subtitle"
+              value={item.subtitle}
+              onChange={(v) => updateItem(item.id, { ...item, subtitle: v })}
+              placeholder="Optional subtitle"
+            />
+            <Textarea
+              label="Description"
+              value={item.description}
+              onChange={(v) => updateItem(item.id, { ...item, description: v })}
+              placeholder="Optional description"
+              rows={2}
+            />
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={addItem}
+          className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-slate-400 text-sm font-medium hover:text-primary hover:border-primary/50 transition-all flex items-center justify-center gap-2"
+        >
+          <span className="material-symbols-outlined text-sm">add</span>
+          Add Item
+        </button>
+      </div>
+    </Accordion>
+  );
+};
+
+// ─── Section type definitions ────────────────────────────────────────────────
+
+type DynamicSectionType =
+  | 'experience'
+  | 'education'
+  | 'projects'
+  | 'volunteering'
+  | 'awards'
+  | 'publications'
+  | 'custom';
+
+const SECTION_OPTIONS: { id: DynamicSectionType; label: string; icon: string }[] = [
+  { id: 'education', label: 'Education', icon: 'school' },
+  { id: 'experience', label: 'Experience', icon: 'work' },
+  { id: 'projects', label: 'Projects', icon: 'code' },
+  { id: 'volunteering', label: 'Volunteering', icon: 'volunteer_activism' },
+  { id: 'awards', label: 'Awards / Grants', icon: 'emoji_events' },
+  { id: 'publications', label: 'Publications', icon: 'article' },
+  { id: 'custom', label: 'Custom Section', icon: 'tune' },
+];
+
+// ─── TEMPLATE CONFIG ─────────────────────────────────────────────────────────
+
+const TEMPLATES: { id: TemplateType; label: string }[] = [
+  { id: 'modern', label: 'Modern' },
+  { id: 'minimalist', label: 'Minimalist' },
+  { id: 'professional', label: 'Professional' },
+  { id: 'europass', label: 'Europass' },
+  { id: 'grant', label: 'Academic' },
+  { id: 'tech', label: 'Tech' },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
 export default function CVBuilder() {
   const [cvData, setCvData] = useState<CVData>(defaultCVData);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('modern');
   const [openSections, setOpenSections] = useState<string[]>(['personal']);
   const [isExporting, setIsExporting] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [activeSections, setActiveSections] = useState<string[]>([
+    'experience',
+    'education',
+    'skills',
+    'languages',
+  ]);
   const previewRef = useRef<HTMLDivElement>(null);
 
   // Load from localStorage on mount
@@ -319,15 +644,27 @@ export default function CVBuilder() {
         console.error('Failed to parse saved CV data:', e);
       }
     }
+    const savedSections = localStorage.getItem(STORAGE_KEY + '_sections');
+    if (savedSections) {
+      try {
+        setActiveSections(JSON.parse(savedSections));
+      } catch {
+        // ignore
+      }
+    }
   }, []);
 
-  // Save to localStorage on change (debounced)
+  // Save to localStorage on change
   useEffect(() => {
     const timer = setTimeout(() => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cvData));
     }, 500);
     return () => clearTimeout(timer);
   }, [cvData]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY + '_sections', JSON.stringify(activeSections));
+  }, [activeSections]);
 
   const toggleSection = (section: string) => {
     setOpenSections((prev) =>
@@ -342,8 +679,9 @@ export default function CVBuilder() {
     }));
   }, []);
 
-  // Experience handlers
-  const addExperience = () => {
+  // ─── Generic array handlers ──────────────────────────────────────────────
+
+  const addExperience = () =>
     setCvData((prev) => ({
       ...prev,
       experience: [
@@ -359,24 +697,15 @@ export default function CVBuilder() {
         },
       ],
     }));
-  };
-
-  const updateExperience = (id: string, updated: Experience) => {
+  const updateExperience = (id: string, updated: Experience) =>
     setCvData((prev) => ({
       ...prev,
       experience: prev.experience.map((e) => (e.id === id ? updated : e)),
     }));
-  };
+  const removeExperience = (id: string) =>
+    setCvData((prev) => ({ ...prev, experience: prev.experience.filter((e) => e.id !== id) }));
 
-  const removeExperience = (id: string) => {
-    setCvData((prev) => ({
-      ...prev,
-      experience: prev.experience.filter((e) => e.id !== id),
-    }));
-  };
-
-  // Education handlers
-  const addEducation = () => {
+  const addEducation = () =>
     setCvData((prev) => ({
       ...prev,
       education: [
@@ -384,56 +713,150 @@ export default function CVBuilder() {
         { id: generateId(), degree: '', school: '', startDate: '', endDate: '', gpa: '' },
       ],
     }));
-  };
-
-  const updateEducation = (id: string, updated: Education) => {
+  const updateEducation = (id: string, updated: Education) =>
     setCvData((prev) => ({
       ...prev,
       education: prev.education.map((e) => (e.id === id ? updated : e)),
     }));
-  };
+  const removeEducation = (id: string) =>
+    setCvData((prev) => ({ ...prev, education: prev.education.filter((e) => e.id !== id) }));
 
-  const removeEducation = (id: string) => {
-    setCvData((prev) => ({
-      ...prev,
-      education: prev.education.filter((e) => e.id !== id),
-    }));
-  };
-
-  // Language handlers
-  const addLanguage = () => {
+  const addLanguage = () =>
     setCvData((prev) => ({
       ...prev,
       languages: [...prev.languages, { id: generateId(), name: '', proficiency: 'intermediate' }],
     }));
-  };
-
-  const updateLanguage = (id: string, updated: Language) => {
+  const updateLanguage = (id: string, updated: Language) =>
     setCvData((prev) => ({
       ...prev,
       languages: prev.languages.map((l) => (l.id === id ? updated : l)),
     }));
-  };
+  const removeLanguage = (id: string) =>
+    setCvData((prev) => ({ ...prev, languages: prev.languages.filter((l) => l.id !== id) }));
 
-  const removeLanguage = (id: string) => {
+  const addProject = () =>
     setCvData((prev) => ({
       ...prev,
-      languages: prev.languages.filter((l) => l.id !== id),
+      projects: [
+        ...prev.projects,
+        { id: generateId(), title: '', description: '', technologies: '', url: '' },
+      ],
     }));
+  const updateProject = (id: string, updated: Project) =>
+    setCvData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => (p.id === id ? updated : p)),
+    }));
+  const removeProject = (id: string) =>
+    setCvData((prev) => ({ ...prev, projects: prev.projects.filter((p) => p.id !== id) }));
+
+  const addVolunteering = () =>
+    setCvData((prev) => ({
+      ...prev,
+      volunteering: [
+        ...prev.volunteering,
+        {
+          id: generateId(),
+          role: '',
+          organization: '',
+          startDate: '',
+          endDate: '',
+          description: '',
+        },
+      ],
+    }));
+  const updateVolunteering = (id: string, updated: Volunteering) =>
+    setCvData((prev) => ({
+      ...prev,
+      volunteering: prev.volunteering.map((v) => (v.id === id ? updated : v)),
+    }));
+  const removeVolunteering = (id: string) =>
+    setCvData((prev) => ({ ...prev, volunteering: prev.volunteering.filter((v) => v.id !== id) }));
+
+  const addAward = () =>
+    setCvData((prev) => ({
+      ...prev,
+      awards: [
+        ...prev.awards,
+        { id: generateId(), title: '', issuer: '', date: '', description: '' },
+      ],
+    }));
+  const updateAward = (id: string, updated: Award) =>
+    setCvData((prev) => ({ ...prev, awards: prev.awards.map((a) => (a.id === id ? updated : a)) }));
+  const removeAward = (id: string) =>
+    setCvData((prev) => ({ ...prev, awards: prev.awards.filter((a) => a.id !== id) }));
+
+  const addPublication = () =>
+    setCvData((prev) => ({
+      ...prev,
+      publications: [
+        ...prev.publications,
+        { id: generateId(), title: '', publisher: '', date: '', url: '' },
+      ],
+    }));
+  const updatePublication = (id: string, updated: Publication) =>
+    setCvData((prev) => ({
+      ...prev,
+      publications: prev.publications.map((p) => (p.id === id ? updated : p)),
+    }));
+  const removePublication = (id: string) =>
+    setCvData((prev) => ({ ...prev, publications: prev.publications.filter((p) => p.id !== id) }));
+
+  const addCustomSection = () => {
+    const newSection: CustomSection = {
+      id: generateId(),
+      sectionTitle: '',
+      items: [{ id: generateId(), title: '', subtitle: '', description: '' }],
+    };
+    setCvData((prev) => ({ ...prev, customSections: [...prev.customSections, newSection] }));
+    setActiveSections((prev) => [...prev, `custom_${newSection.id}`]);
+  };
+  const updateCustomSection = (id: string, updated: CustomSection) =>
+    setCvData((prev) => ({
+      ...prev,
+      customSections: prev.customSections.map((cs) => (cs.id === id ? updated : cs)),
+    }));
+  const removeCustomSection = (id: string) => {
+    setCvData((prev) => ({
+      ...prev,
+      customSections: prev.customSections.filter((cs) => cs.id !== id),
+    }));
+    setActiveSections((prev) => prev.filter((s) => s !== `custom_${id}`));
   };
 
-  // PDF Export using html2canvas + jspdf
+  // ─── Section management ──────────────────────────────────────────────────
+
+  const addSection = (type: DynamicSectionType) => {
+    if (type === 'custom') {
+      addCustomSection();
+    } else {
+      setActiveSections((prev) => [...prev, type]);
+    }
+    setShowAddMenu(false);
+  };
+
+  const removeSection = (sectionId: string) => {
+    setActiveSections((prev) => prev.filter((s) => s !== sectionId));
+  };
+
+  // Check if section is available to add (non-custom can only appear once)
+  const availableSections = SECTION_OPTIONS.filter((opt) => {
+    if (opt.id === 'custom') return true; // Can always add more custom sections
+    return !activeSections.includes(opt.id);
+  });
+
+  // ─── PDF Export — A4 fix with multi-page ─────────────────────────────────
+
   const exportToPDF = async () => {
     if (!previewRef.current) return;
     setIsExporting(true);
 
     try {
-      // Dynamic imports for PDF generation
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
 
       const canvas = await html2canvas(previewRef.current, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
@@ -441,10 +864,19 @@ export default function CVBuilder() {
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const pageWidth = 210;
+      const pageHeight = 297;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
+
+      let position = 0;
+
+      while (position < imgHeight) {
+        if (position > 0) pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, -position, imgWidth, imgHeight);
+        position += pageHeight;
+      }
 
       const fileName = `${cvData.personalInfo.firstName || 'My'}_${cvData.personalInfo.lastName || 'Resume'}_CV.pdf`;
       pdf.save(fileName);
@@ -460,10 +892,12 @@ export default function CVBuilder() {
     if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
       setCvData(defaultCVData);
       localStorage.removeItem(STORAGE_KEY);
+      setActiveSections(['experience', 'education', 'skills', 'languages']);
     }
   };
 
-  // Template renderer
+  // ─── Template Renderer ───────────────────────────────────────────────────
+
   const renderTemplate = () => {
     switch (selectedTemplate) {
       case 'modern':
@@ -472,10 +906,261 @@ export default function CVBuilder() {
         return <MinimalistTemplate data={cvData} />;
       case 'professional':
         return <ProfessionalTemplate data={cvData} />;
+      case 'europass':
+        return <EuropassTemplate data={cvData} />;
+      case 'grant':
+        return <GrantTemplate data={cvData} />;
+      case 'tech':
+        return <TechTemplate data={cvData} />;
       default:
         return <ModernTemplate data={cvData} />;
     }
   };
+
+  // ─── Render dynamic section editor ───────────────────────────────────────
+
+  const renderSectionEditor = (sectionId: string) => {
+    // Custom sections have IDs like "custom_abc1234"
+    if (sectionId.startsWith('custom_')) {
+      const csId = sectionId.replace('custom_', '');
+      const cs = cvData.customSections.find((s) => s.id === csId);
+      if (!cs) return null;
+      return (
+        <CustomSectionEditor
+          key={sectionId}
+          section={cs}
+          onChange={(updated) => updateCustomSection(csId, updated)}
+          onRemove={() => removeCustomSection(csId)}
+        />
+      );
+    }
+
+    switch (sectionId) {
+      case 'experience':
+        return (
+          <Accordion
+            key="experience"
+            title="Work Experience"
+            icon="work"
+            isOpen={openSections.includes('experience')}
+            onToggle={() => toggleSection('experience')}
+            onRemove={() => removeSection('experience')}
+          >
+            <div className="space-y-3">
+              {cvData.experience.map((exp) => (
+                <ExperienceItem
+                  key={exp.id}
+                  exp={exp}
+                  onChange={(updated) => updateExperience(exp.id, updated)}
+                  onRemove={() => removeExperience(exp.id)}
+                />
+              ))}
+              <button
+                type="button"
+                onClick={addExperience}
+                className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-slate-400 text-sm font-medium hover:text-primary hover:border-primary/50 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-sm">add</span>Add Experience
+              </button>
+            </div>
+          </Accordion>
+        );
+      case 'education':
+        return (
+          <Accordion
+            key="education"
+            title="Education"
+            icon="school"
+            isOpen={openSections.includes('education')}
+            onToggle={() => toggleSection('education')}
+            onRemove={() => removeSection('education')}
+          >
+            <div className="space-y-3">
+              {cvData.education.map((edu) => (
+                <EducationItem
+                  key={edu.id}
+                  edu={edu}
+                  onChange={(updated) => updateEducation(edu.id, updated)}
+                  onRemove={() => removeEducation(edu.id)}
+                />
+              ))}
+              <button
+                type="button"
+                onClick={addEducation}
+                className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-slate-400 text-sm font-medium hover:text-primary hover:border-primary/50 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-sm">add</span>Add Education
+              </button>
+            </div>
+          </Accordion>
+        );
+      case 'skills':
+        return (
+          <Accordion
+            key="skills"
+            title="Skills"
+            icon="psychology"
+            isOpen={openSections.includes('skills')}
+            onToggle={() => toggleSection('skills')}
+            onRemove={() => removeSection('skills')}
+          >
+            <SkillsInput
+              skills={cvData.skills}
+              onChange={(skills) => setCvData((prev) => ({ ...prev, skills }))}
+            />
+          </Accordion>
+        );
+      case 'languages':
+        return (
+          <Accordion
+            key="languages"
+            title="Languages"
+            icon="translate"
+            isOpen={openSections.includes('languages')}
+            onToggle={() => toggleSection('languages')}
+            onRemove={() => removeSection('languages')}
+          >
+            <div className="space-y-3">
+              {cvData.languages.map((lang) => (
+                <LanguageItem
+                  key={lang.id}
+                  lang={lang}
+                  onChange={(updated) => updateLanguage(lang.id, updated)}
+                  onRemove={() => removeLanguage(lang.id)}
+                />
+              ))}
+              <button
+                type="button"
+                onClick={addLanguage}
+                className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-slate-400 text-sm font-medium hover:text-primary hover:border-primary/50 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-sm">add</span>Add Language
+              </button>
+            </div>
+          </Accordion>
+        );
+      case 'projects':
+        return (
+          <Accordion
+            key="projects"
+            title="Projects"
+            icon="code"
+            isOpen={openSections.includes('projects')}
+            onToggle={() => toggleSection('projects')}
+            onRemove={() => removeSection('projects')}
+          >
+            <div className="space-y-3">
+              {cvData.projects.map((p) => (
+                <ProjectItem
+                  key={p.id}
+                  item={p}
+                  onChange={(updated) => updateProject(p.id, updated)}
+                  onRemove={() => removeProject(p.id)}
+                />
+              ))}
+              <button
+                type="button"
+                onClick={addProject}
+                className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-slate-400 text-sm font-medium hover:text-primary hover:border-primary/50 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-sm">add</span>Add Project
+              </button>
+            </div>
+          </Accordion>
+        );
+      case 'volunteering':
+        return (
+          <Accordion
+            key="volunteering"
+            title="Volunteering"
+            icon="volunteer_activism"
+            isOpen={openSections.includes('volunteering')}
+            onToggle={() => toggleSection('volunteering')}
+            onRemove={() => removeSection('volunteering')}
+          >
+            <div className="space-y-3">
+              {cvData.volunteering.map((v) => (
+                <VolunteeringItem
+                  key={v.id}
+                  item={v}
+                  onChange={(updated) => updateVolunteering(v.id, updated)}
+                  onRemove={() => removeVolunteering(v.id)}
+                />
+              ))}
+              <button
+                type="button"
+                onClick={addVolunteering}
+                className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-slate-400 text-sm font-medium hover:text-primary hover:border-primary/50 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-sm">add</span>Add Volunteering
+              </button>
+            </div>
+          </Accordion>
+        );
+      case 'awards':
+        return (
+          <Accordion
+            key="awards"
+            title="Awards / Grants"
+            icon="emoji_events"
+            isOpen={openSections.includes('awards')}
+            onToggle={() => toggleSection('awards')}
+            onRemove={() => removeSection('awards')}
+          >
+            <div className="space-y-3">
+              {cvData.awards.map((a) => (
+                <AwardItem
+                  key={a.id}
+                  item={a}
+                  onChange={(updated) => updateAward(a.id, updated)}
+                  onRemove={() => removeAward(a.id)}
+                />
+              ))}
+              <button
+                type="button"
+                onClick={addAward}
+                className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-slate-400 text-sm font-medium hover:text-primary hover:border-primary/50 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-sm">add</span>Add Award
+              </button>
+            </div>
+          </Accordion>
+        );
+      case 'publications':
+        return (
+          <Accordion
+            key="publications"
+            title="Publications"
+            icon="article"
+            isOpen={openSections.includes('publications')}
+            onToggle={() => toggleSection('publications')}
+            onRemove={() => removeSection('publications')}
+          >
+            <div className="space-y-3">
+              {cvData.publications.map((pub) => (
+                <PublicationItem
+                  key={pub.id}
+                  item={pub}
+                  onChange={(updated) => updatePublication(pub.id, updated)}
+                  onRemove={() => removePublication(pub.id)}
+                />
+              ))}
+              <button
+                type="button"
+                onClick={addPublication}
+                className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-slate-400 text-sm font-medium hover:text-primary hover:border-primary/50 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-sm">add</span>Add Publication
+              </button>
+            </div>
+          </Accordion>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // ─── Main Render ─────────────────────────────────────────────────────────
 
   return (
     <div className="flex h-full overflow-hidden">
@@ -492,7 +1177,7 @@ export default function CVBuilder() {
             </button>
           </div>
 
-          {/* Personal Details */}
+          {/* Personal Details — always fixed */}
           <Accordion
             title="Personal Details"
             icon="person"
@@ -548,7 +1233,7 @@ export default function CVBuilder() {
             />
           </Accordion>
 
-          {/* Summary */}
+          {/* Summary — always fixed */}
           <Accordion
             title="Professional Summary"
             icon="summarize"
@@ -564,99 +1249,43 @@ export default function CVBuilder() {
             />
           </Accordion>
 
-          {/* Experience */}
-          <Accordion
-            title="Work Experience"
-            icon="work"
-            isOpen={openSections.includes('experience')}
-            onToggle={() => toggleSection('experience')}
-          >
-            <div className="space-y-3">
-              {cvData.experience.map((exp) => (
-                <ExperienceItem
-                  key={exp.id}
-                  exp={exp}
-                  onChange={(updated) => updateExperience(exp.id, updated)}
-                  onRemove={() => removeExperience(exp.id)}
-                />
-              ))}
-              <button
-                type="button"
-                onClick={addExperience}
-                className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-slate-400 text-sm font-medium hover:text-primary hover:border-primary/50 transition-all flex items-center justify-center gap-2"
-              >
-                <span className="material-symbols-outlined text-sm">add</span>
-                Add Experience
-              </button>
-            </div>
-          </Accordion>
+          {/* Dynamic Sections */}
+          {activeSections.map((sectionId) => renderSectionEditor(sectionId))}
 
-          {/* Education */}
-          <Accordion
-            title="Education"
-            icon="school"
-            isOpen={openSections.includes('education')}
-            onToggle={() => toggleSection('education')}
-          >
-            <div className="space-y-3">
-              {cvData.education.map((edu) => (
-                <EducationItem
-                  key={edu.id}
-                  edu={edu}
-                  onChange={(updated) => updateEducation(edu.id, updated)}
-                  onRemove={() => removeEducation(edu.id)}
-                />
-              ))}
-              <button
-                type="button"
-                onClick={addEducation}
-                className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-slate-400 text-sm font-medium hover:text-primary hover:border-primary/50 transition-all flex items-center justify-center gap-2"
-              >
-                <span className="material-symbols-outlined text-sm">add</span>
-                Add Education
-              </button>
-            </div>
-          </Accordion>
+          {/* + Add Section */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowAddMenu(!showAddMenu)}
+              className="w-full py-3 border-2 border-dashed border-primary/30 rounded-xl text-primary text-sm font-semibold hover:bg-primary/5 hover:border-primary/50 transition-all flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined text-sm">add_circle</span>
+              Add Section
+            </button>
 
-          {/* Skills */}
-          <Accordion
-            title="Skills"
-            icon="psychology"
-            isOpen={openSections.includes('skills')}
-            onToggle={() => toggleSection('skills')}
-          >
-            <SkillsInput
-              skills={cvData.skills}
-              onChange={(skills) => setCvData((prev) => ({ ...prev, skills }))}
-            />
-          </Accordion>
-
-          {/* Languages */}
-          <Accordion
-            title="Languages"
-            icon="translate"
-            isOpen={openSections.includes('languages')}
-            onToggle={() => toggleSection('languages')}
-          >
-            <div className="space-y-3">
-              {cvData.languages.map((lang) => (
-                <LanguageItem
-                  key={lang.id}
-                  lang={lang}
-                  onChange={(updated) => updateLanguage(lang.id, updated)}
-                  onRemove={() => removeLanguage(lang.id)}
-                />
-              ))}
-              <button
-                type="button"
-                onClick={addLanguage}
-                className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-slate-400 text-sm font-medium hover:text-primary hover:border-primary/50 transition-all flex items-center justify-center gap-2"
-              >
-                <span className="material-symbols-outlined text-sm">add</span>
-                Add Language
-              </button>
-            </div>
-          </Accordion>
+            {showAddMenu && (
+              <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                {availableSections.length === 0 ? (
+                  <div className="p-3 text-center text-xs text-slate-400">All sections added</div>
+                ) : (
+                  availableSections.map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => addSection(opt.id)}
+                      className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
+                    >
+                      <span className="material-symbols-outlined text-primary text-sm">
+                        {opt.icon}
+                      </span>
+                      <span className="text-sm text-slate-700 dark:text-slate-200">
+                        {opt.label}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -666,18 +1295,18 @@ export default function CVBuilder() {
         <div className="shrink-0 px-6 py-3 bg-white dark:bg-card-dark border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-slate-500 uppercase">Template:</span>
-            <div className="flex gap-1">
-              {(['modern', 'minimalist', 'professional'] as TemplateType[]).map((template) => (
+            <div className="flex gap-1 flex-wrap">
+              {TEMPLATES.map((template) => (
                 <button
-                  key={template}
-                  onClick={() => setSelectedTemplate(template)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
-                    selectedTemplate === template
+                  key={template.id}
+                  onClick={() => setSelectedTemplate(template.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    selectedTemplate === template.id
                       ? 'bg-primary text-white'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                   }`}
                 >
-                  {template}
+                  {template.label}
                 </button>
               ))}
             </div>
@@ -701,15 +1330,16 @@ export default function CVBuilder() {
           </button>
         </div>
 
-        {/* Preview Area */}
+        {/* Preview Area — A4 constrained */}
         <div className="flex-1 overflow-auto p-8 flex justify-center">
           <div
+            id="cv-preview"
             ref={previewRef}
             className="bg-white shadow-xl"
             style={{
               width: '210mm',
               minHeight: '297mm',
-              transform: 'scale(0.75)',
+              transform: 'scale(0.65)',
               transformOrigin: 'top center',
             }}
           >
