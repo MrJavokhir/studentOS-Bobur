@@ -128,6 +128,9 @@ model User {
   // Tool Usage
   toolUsages        ToolUsage[]
 
+  // Learning Plans
+  learningPlans     LearningPlan[]
+
   @@index([email])
   @@index([googleId])
   @@index([referralCode])
@@ -670,4 +673,51 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@index([createdAt])
+}
+
+// =============================================================================
+// LEARNING PLANS
+// =============================================================================
+
+enum ResourceType {
+  VIDEO
+  ARTICLE
+}
+
+model LearningPlan {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic         String
+  durationWeeks Int
+  createdAt     DateTime    @default(now())
+  phases        PlanPhase[]
+
+  @@index([userId])
+}
+
+model PlanPhase {
+  id          String         @id @default(cuid())
+  planId      String
+  plan        LearningPlan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  orderIndex  Int
+  isCompleted Boolean        @default(false)
+  resources   PlanResource[]
+
+  @@index([planId])
+}
+
+model PlanResource {
+  id           String       @id @default(cuid())
+  phaseId      String
+  phase        PlanPhase    @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  title        String
+  type         ResourceType
+  url          String?
+  durationText String?
+  isCompleted  Boolean      @default(false)
+
+  @@index([phaseId])
 }

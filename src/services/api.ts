@@ -376,6 +376,14 @@ export const aiApi = {
     api.post('/ai/generate-presentation', data),
 };
 
+// Learning Plan API
+export const learningPlanApi = {
+  getActive: () => api.get('/learning-plans'),
+  generate: (data: { topic: string; weeks: string }) => api.post('/learning-plans/generate', data),
+  toggleResource: (id: string) => api.patch(`/learning-plans/resources/${id}/toggle`, {}),
+  deletePlan: (id: string) => api.delete(`/learning-plans/${id}`),
+};
+
 // Admin API
 export const adminApi = {
   getStats: () => api.get('/admin/stats'),
